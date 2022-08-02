@@ -10,7 +10,7 @@ async def on_ready():
 
 # bot.remove_command('help')
 
-@bot.command()
+@bot.slash_command()
 async def ping(ctx):
     await ctx.send (f"📶 {round(bot.latency * 1000)}ms")
 
@@ -30,4 +30,4 @@ for file in os.listdir('./cogs'):
             print(f"Unable to load {file[:-3]}.")
             print(traceback.format_exc())
 
-bot.run("TOKEN")
+bot.run("MTAwMzk1NDc3OTM0NjcxODcyMA.GvdCkj.bfHjQKiRlkzRTm1KdRSXUV0-Sug4P58aaC_UFM")
