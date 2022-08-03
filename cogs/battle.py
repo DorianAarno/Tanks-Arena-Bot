@@ -1,3 +1,4 @@
+from turtle import distance
 import numpy as np
 import random
 from io import BytesIO
@@ -10,14 +11,17 @@ from PIL import Image, ImageDraw
 
 G = 9.8
 
-def compute_distance(power):
-    theta = np.pi/3
+def compute_distance(power, angle=45):
+    theta = angle * np.pi/180
     x0 = 0
     v0 = power
     t = 2 * v0 * np.sin(theta) / G
     xt = x0 + (v0*t*np.cos(theta))
+    distance = round((xt - x0) *  2.942)
+    if distance > 3000:
+        distance = 3000
+    return (distance)
 
-    return (xt-x0)
 
 
 def give_tank_image(path, name, total_health, current_health=None):
@@ -76,8 +80,9 @@ def give_tank_image(path, name, total_health, current_health=None):
 
     return im
 
-def set_power(user_input, bg_dimensions):
-    return user_input
+def set_power(bg_dimensions, power, angle):
+    distance = compute_distance(power, angle)
+    return f"Power : {power} \nAngle : {angle} \nDistance Covered : {distance}"
 
 class PowerModal(ui.Modal):
     def __init__(self) -> None:
@@ -88,21 +93,36 @@ class PowerModal(ui.Modal):
                 max_length=3,
                 style=TextInputStyle.short,
                 custom_id="rate"
+            ),
+            ui.TextInput(
+                label="Angle",
+                placeholder="Input an integer between 20-80",
+                max_length=2,
+                style=TextInputStyle.short,
+                custom_id="angle"
             )
         ]
-
         super().__init__(title="Set Power", custom_id="power", components=components)
 
     async def callback(self, inter: ModalInteraction):
         background = Image.open("assets/background.png")
         bg_width = background.width
+        power = None
+        angle = None
         for custom_id, value in inter.text_values.items():
             if custom_id == "rate":
                 if int(value) <= 100 and int(value) >= 1:
-                    await inter.send(set_power(int(value), bg_width))
+                    power = int(value)
                 else:
                     await inter.send("Power needs to be between 1-100", ephemeral=True)
-
+            if custom_id == "angle":
+                if int(value) <= 80 and int(value) >= 20:
+                    angle = int(value)
+                else:
+                    await inter.send("Angle needs to be between 20-80", ephemeral=True)
+        if power and angle:
+            stuff = set_power(bg_width, power, angle)
+            await inter.send(stuff)
 
 class Button(ui.Button):
     def __init__(self, bot, label):
