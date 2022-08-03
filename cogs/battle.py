@@ -35,27 +35,25 @@ def give_tank_image(path, name, total_health, current_health=None):
     y_cord = 0
     height = 5
     width = tank.size[1] - x_cord
+    padding = 5 # padding between tank and bar
 
     # gives the health ratio
     health_ratio = width / total_health 
     # gives the bar width
     bar_width = health_ratio * current_health
     
-    # Green
-    bar_color = (176, 255, 120)
+    # Bright Red
+    bar_color = (255, 0, 0)
     # White
     bg_color = (255, 255, 255)
-    print(tank.size[0], tank.size[1])
     
-    # We create a new transparent image
-    im = Image.new("RGBA", (tank.size[0], tank.size[1] + 10), (0, 0, 0, 1))
-    
-    # We draw the hp bar on fix place
+
+    im = Image.new("RGBA", (tank.size[0], tank.size[1] + height + padding), (0, 0, 0, 1))
     draw = ImageDraw.Draw(im)
     
-    # make first background circle
+    # make the bar circle at start
     draw.ellipse((x_cord, y_cord, x_cord+height, y_cord+height), fill=bg_color)
-    # make the last brackground circla
+    # make the bar circle at the end
     draw.ellipse((x_cord+width, y_cord, x_cord+width+height, y_cord+height), fill=bg_color)
     # fill the middle portion
     draw.rectangle((x_cord+(height/2), y_cord, x_cord+width+(height/2), y_cord+height), fill=bg_color)
@@ -63,7 +61,6 @@ def give_tank_image(path, name, total_health, current_health=None):
     if bar_width > 0:
         # set to actual health ratio
         width = bar_width - 1
-        # Same stuff as above
         draw.ellipse((x_cord, y_cord, x_cord+height, y_cord+height), fill=bar_color)
         draw.ellipse((x_cord+width, y_cord, x_cord+width+height, y_cord+height), fill=bar_color)
         draw.rectangle((x_cord+(height/2), y_cord, x_cord+width+(height/2), y_cord+height), fill=bar_color)
@@ -71,8 +68,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     # Set the x cord for tank 
     tank_x_cord = x_cord # its same as exp bar for aesthetic looks
 
-    # Some padding between bar and tank
-    padding = im.size[1] - (height + tank.size[1]) 
+    # Some padding between bar and tank 
     height += padding
     
     # finally paste the tank
