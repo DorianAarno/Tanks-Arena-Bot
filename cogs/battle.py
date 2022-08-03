@@ -42,7 +42,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     bar_width = health_ratio * current_health
     
     # Green
-    bar_color = (176, 255, 120)
+    bar_color = (255, 0, 0)
     # White
     bg_color = (255, 255, 255)
     print(tank.size[0], tank.size[1])
@@ -188,7 +188,7 @@ class Battle(Cog):
         background.save(background_bytes, "PNG")
         background_bytes.seek(0)
 
-        await ctx.send(file=File(filename="bg.png", fp=background_bytes), view=ButtonView(self.bot))
+        await ctx.send(content=f"**{ctx.author.name}** <:VS:1004300296647868427>  **{opponent.name}**", file=File(filename="bg.png", fp=background_bytes), view=ButtonView(self.bot))
 
 
 def setup(bot):
