@@ -42,11 +42,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     # gives the bar width
     bar_width = health_ratio * current_health
     
-<<<<<<< HEAD
     # Bright Red
-=======
-    # Green
->>>>>>> 27a2cabe516f366442d87cfc6554cb5e2ea8b751
     bar_color = (255, 0, 0)
     # White
     bg_color = (255, 255, 255)
