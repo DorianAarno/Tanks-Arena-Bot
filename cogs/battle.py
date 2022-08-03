@@ -11,7 +11,7 @@ def give_tank_image(path, name, total_health, current_health=None):
         current_health = total_health
     
     tank =  Image.open(path)
-    tank = tank.resize((50, 50))
+    # tank = tank.resize((50, 50))
 
     x_cord = 0
     y_cord = 0
@@ -27,6 +27,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     bar_color = (176, 255, 120)
     # White
     bg_color = (255, 255, 255)
+    print(tank.size[0], tank.size[1])
     
     # We create a new transparent image
     im = Image.new("RGBA", (tank.size[0], tank.size[1] + 10), (255, 255, 255, 0))
@@ -57,7 +58,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     height += padding
     
     # finally paste the tank
-    im.paste(tank, (tank_x_cord, height + tank_x_cord, tank.size[0] + tank_x_cord , height + (tank.size[0] + tank_x_cord)))
+    im.paste(tank, (tank_x_cord, height + tank_x_cord, tank.size[0] + tank_x_cord , height + (tank.size[0] + tank_x_cord)), mask=tank)
 
     return im
 
@@ -119,22 +120,27 @@ class Battle(Cog):
         await ctx.response.defer()
 
         # Opening and preparing all the assets
-        background = Image.open("assets/background.png")
+        background = Image.open("assets/bg.png")
 
         # made a function to give tank images
-        tank_left = give_tank_image("assets/tank.png", {ctx.author.name}, 100)
-        tank_right = give_tank_image("assets/tank_right.png", "Bot", 100)
+        tank_left = give_tank_image("assets/tank_atk.png", {ctx.author.name}, 100)
+        tank_right = give_tank_image("assets/tank_hp.png", "Bot", 100)
 
-        print(f"Background Dimenstions: {background.width, background.height}")
+        print(f"Background Dimensions: {background.width, background.height}")
         # It'll be good if our tank dimensions are same
-        print(f"Tank Dimenstions: {tank_left.width, tank_left.height}")
+        print(f"Tank Dimensions: {tank_left.width, tank_left.height}")
 
         background.paste(
             tank_right,
             (background.width - tank_right.width, background.height - tank_right.width),
+            mask=tank_right, 
         )
         # We subtracted width to make sure the tank does not go out of the background
-        background.paste(tank_left, (0, background.height - tank_left.width))
+        background.paste(
+            tank_left, 
+            (0, background.height - tank_left.width), 
+            mask=tank_left, 
+            )
 
         background_bytes = BytesIO()
         background.save(background_bytes, "PNG")
