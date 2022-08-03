@@ -13,9 +13,9 @@ def give_tank_image(path, name, total_health, current_health=None):
     tank =  Image.open(path)
     tank = tank.resize((50, 50))
 
-    x_cord = 5
-    y_cord = 1
-    height = 6
+    x_cord = 0
+    y_cord = 0
+    height = 5
     width = tank.size[1] - x_cord
 
     # gives the health ratio
@@ -29,7 +29,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     bg_color = (255, 255, 255)
     
     # We create a new transparent image
-    im = Image.new("RGBA", (tank.size[0]+20, tank.size[1]+20), (255, 255, 255, 0))
+    im = Image.new("RGBA", (tank.size[0], tank.size[1] + 10), (255, 255, 255, 0))
     
     # We draw the hp bar on fix place
     draw = ImageDraw.Draw(im)
@@ -43,17 +43,17 @@ def give_tank_image(path, name, total_health, current_health=None):
 
     if bar_width > 0:
         # set to actual health ratio
-        width = bar_width
+        width = bar_width - 1
         # Same stuff as above
         draw.ellipse((x_cord, y_cord, x_cord+height, y_cord+height), fill=bar_color)
         draw.ellipse((x_cord+width, y_cord, x_cord+width+height, y_cord+height), fill=bar_color)
         draw.rectangle((x_cord+(height/2), y_cord, x_cord+width+(height/2), y_cord+height), fill=bar_color)
 
-    # Set the x cord for tank
+    # Set the x cord for tank 
     tank_x_cord = x_cord # its same as exp bar for aesthetic looks
 
     # Some padding between bar and tank
-    padding = 5
+    padding = im.size[1] - (height + tank.size[1]) 
     height += padding
     
     # finally paste the tank
