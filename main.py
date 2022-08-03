@@ -64,12 +64,6 @@ async def on_ready():
 
 # bot.remove_command('help')
 
-
-@bot.slash_command()
-async def ping(ctx):
-    await ctx.send(f"📶 {round(bot.latency * 1000)}ms")
-
-
 # @bot.event
 # async def on_command_error(ctx,error):
 #     if isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):

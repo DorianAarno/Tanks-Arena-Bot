@@ -120,10 +120,13 @@ class ButtonView(ui.View):
         self.add_item(Button(bot, 'Attack'))
 
 class Battle(Cog):
+    """
+        ⚔️ Battle
+    """
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command()
+    @slash_command(name="battle", description="Battle")
     async def battle(self, ctx, opponent: Member):
         """
         Parameters

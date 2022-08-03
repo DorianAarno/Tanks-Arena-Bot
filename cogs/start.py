@@ -52,10 +52,13 @@ class CreatePaginator(ui.View):
             await inter.send('Unable to change the page.', ephemeral=True)
 
 class Starter(Cog):
+    """
+        ⏳ Start
+    """
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command()
+    @slash_command(name="start", description="start")
     async def start(self, ctx):
         await ctx.response.defer()
 
