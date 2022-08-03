@@ -1,3 +1,5 @@
+import numpy as np
+import random
 from io import BytesIO
 from random import randint
 
@@ -6,12 +8,24 @@ from disnake.ext.commands import *
 from PIL import Image, ImageDraw
 
 
+G = 9.8
+
+def compute_distance(power):
+    theta = np.pi/3
+    x0 = 0
+    v0 = power
+    t = 2 * v0 * np.sin(theta) / G
+    xt = x0 + (v0*t*np.cos(theta))
+
+    return (xt-x0)
+
+
 def give_tank_image(path, name, total_health, current_health=None):
     if current_health is None:
         current_health = total_health
     
     tank =  Image.open(path)
-    # tank = tank.resize((50, 50))
+    tank = tank.resize((140, 120))
 
     x_cord = 0
     y_cord = 0
@@ -30,7 +44,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     print(tank.size[0], tank.size[1])
     
     # We create a new transparent image
-    im = Image.new("RGBA", (tank.size[0], tank.size[1] + 10), (255, 255, 255, 0))
+    im = Image.new("RGBA", (tank.size[0], tank.size[1] + 10), (0, 0, 0, 1))
     
     # We draw the hp bar on fix place
     draw = ImageDraw.Draw(im)
@@ -58,7 +72,7 @@ def give_tank_image(path, name, total_health, current_health=None):
     height += padding
     
     # finally paste the tank
-    im.paste(tank, (tank_x_cord, height + tank_x_cord, tank.size[0] + tank_x_cord , height + (tank.size[0] + tank_x_cord)), mask=tank)
+    im.paste(tank, (tank_x_cord, height + tank_x_cord, tank.size[0] + tank_x_cord , height + (tank.size[1] + tank_x_cord)), mask=tank)
 
     return im
 
@@ -129,16 +143,21 @@ class Battle(Cog):
         print(f"Background Dimensions: {background.width, background.height}")
         # It'll be good if our tank dimensions are same
         print(f"Tank Dimensions: {tank_left.width, tank_left.height}")
-
+        
+        # flipping the right tank
+        tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
+        ground_level = 825
+        random_right_x = random.randint(1, 800)
+        random_left_x = random.randint(1, 800)
         background.paste(
             tank_right,
-            (background.width - tank_right.width, background.height - tank_right.width),
+            (background.width - (tank_right.width + random_right_x), (ground_level - tank_right.height)),
             mask=tank_right, 
         )
         # We subtracted width to make sure the tank does not go out of the background
         background.paste(
             tank_left, 
-            (0, background.height - tank_left.width), 
+            (random_left_x, (ground_level - tank_left.height)), 
             mask=tank_left, 
             )
 
