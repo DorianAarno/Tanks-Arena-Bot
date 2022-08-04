@@ -1,5 +1,5 @@
 {
-    "Attack": {
+    "KNISPEL": {
         "GIF": "https://media.discordapp.net/attachments/1003927928519802955/1004276059363102830/tank_atk.gif",
         "SERIAL": 1,
         "STATS": {
@@ -18,7 +18,7 @@
         }
     },
 
-    "HP": {
+    "ABRAMS": {
         "GIF": "https://media.discordapp.net/attachments/1003927928519802955/1004276059845431366/tank_hp.gif",
         "SERIAL": 2,
         "STATS": {

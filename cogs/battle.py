@@ -1,9 +1,9 @@
-from turtle import distance
 import numpy as np
 import random
 from io import BytesIO
 from random import randint
-from matplotlib import pyplot as plt
+
+# from matplotlib import pyplot as plt
 
 from disnake import *
 from disnake.ext.commands import *
@@ -15,41 +15,43 @@ G = 9.8
 ONGOING_BATTLES = {}
 GROUND_LEVEL = 825
 
+
 def compute_distance(power, angle):
-    theta = angle * np.pi/180
+    theta = angle * np.pi / 180
     x0 = 0
     v0 = power
 
-    t = 2 * v0 * np.sin(theta) / G    
-    xt = x0 + (v0*t*np.cos(theta))
+    t = 2 * v0 * np.sin(theta) / G
+    xt = x0 + (v0 * t * np.cos(theta))
 
-    distance = round((xt - x0) *  2.942)
+    distance = round((xt - x0) * 2.942)
     if distance > 3000:
         distance = 3000
 
     return distance
 
+
 def prepare_attack_image(bg_img, cords, tank_size, distance):
     explosion_lst = ["explosion.png", "explosion2.png", "explosion3.png"]
-    
+
     nozzle = Image.open("assets/nozzle.png")
     nozzle = nozzle.resize((120, 120))
     nozzle = nozzle.transpose(Image.FLIP_LEFT_RIGHT)
 
     explosion = Image.open(f"assets/{random.choice(explosion_lst)}")
     explosion = explosion.resize((150, 150))
-    
+
     nozzle_x = cords[0] + tank_size[0]
     nozzle_y = int(cords[1] + 10)
-    
+
     explosion_x = int(cords[0] + (distance - 10))
     explosion_y = GROUND_LEVEL - explosion.size[1]
-    
+
     bg_img.paste(nozzle, (nozzle_x, nozzle_y), mask=nozzle)
-    bg_img.paste(explosion, (explosion_x, explosion_y), mask=explosion)    
+    bg_img.paste(explosion, (explosion_x, explosion_y), mask=explosion)
 
     return bg_img
-    
+
 
 def give_tank_image(path, total_health, current_health=None):
     if current_health is None:
@@ -62,7 +64,7 @@ def give_tank_image(path, total_health, current_health=None):
     y_cord = 0
     height = 5
     width = tank.size[1] - x_cord
-    padding = 5 # padding between tank and bar and name
+    padding = 5  # padding between tank and bar and name
 
     # gives the health ratio
     health_ratio = width / total_health
@@ -78,7 +80,7 @@ def give_tank_image(path, total_health, current_health=None):
         "RGBA", (tank.size[0] + 2, tank.size[1] + height + padding), (255, 255, 255, 0)
     )
     draw = ImageDraw.Draw(im)
-    
+
     height += padding
     # make the bar circle at start
     draw.ellipse((x_cord, y_cord, x_cord + height, y_cord + height), fill=bg_color)
@@ -153,7 +155,7 @@ class PowerModal(ui.Modal):
         super().__init__(title="Set Power", custom_id="power", components=components)
 
     async def callback(self, inter: ModalInteraction):
-        background = Image.open("assets/background.png")
+        background = Image.open("assets/bg.png")
         bg_width = background.width
         power = None
         angle = None
@@ -170,22 +172,26 @@ class PowerModal(ui.Modal):
                     await inter.send("Angle needs to be between 20-80", ephemeral=True)
         if power and angle:
             stuff = set_power(bg_width, power, angle)
-            
+
             distance = compute_distance(power, angle)
             battle_dict = ONGOING_BATTLES[inter.message.id]
 
             p1_cords = battle_dict["p1_cords"]
             tank_size = battle_dict["tank_size"]
-            bg_img = battle_dict["bg_img"]
+            bg_img = battle_dict["bg_img"].copy()
             bg_img.show()
             bg_img = prepare_attack_image(bg_img, p1_cords, tank_size, distance)
-            
+
             background_bytes = BytesIO()
             bg_img.save(background_bytes, "PNG")
             background_bytes.seek(0)
-            
-            await inter.message.edit(content=stuff, file=File(filename="bg.png", fp=background_bytes))
-            #await inter.send("You have attacked", ephemeral=True)
+
+            await inter.message.edit(
+                content=stuff,
+                file=File(filename="bg.png", fp=background_bytes),
+                attachments=[],
+            )
+            # await inter.send("You have attacked", ephemeral=True)
 
 
 class Button(ui.Button):
@@ -214,7 +220,7 @@ class Battle(Cog):
         self.bot = bot
 
     @slash_command(name="battle", description="Battle")
-    async def battle(self, ctx, opponent: Member):
+    async def battle(self, ctx: CommandInteraction, opponent: Member):
         """
         Parameters
         ----------
@@ -239,26 +245,37 @@ class Battle(Cog):
 
         random_right_x = random.randint(1, 800)
         random_left_x = random.randint(1, 800)
-        
+
         p1_cords = (random_left_x, (GROUND_LEVEL - tank_left.height))
-        p2_cords = (background.width - (tank_right.width + random_right_x), (GROUND_LEVEL - tank_right.height))
-        
+        p2_cords = (
+            background.width - (tank_right.width + random_right_x),
+            (GROUND_LEVEL - tank_right.height),
+        )
+
         background.paste(
             tank_right, p2_cords, mask=tank_right,
         )
         # We subtracted width to make sure the tank does not go out of the background
         background.paste(
-            tank_left, 
-            p1_cords, 
-            mask=tank_left, 
-            )
-        #print(p1_cords, p2_cords)
+            tank_left, p1_cords, mask=tank_left,
+        )
+        # print(p1_cords, p2_cords)
         background_bytes = BytesIO()
         background.save(background_bytes, "PNG")
         background_bytes.seek(0)
 
-        msg = await ctx.edit_original_message(content=f"**{ctx.author.name}** <:VS:1004300296647868427>  **{opponent.name}**", file=File(filename="bg.png", fp=background_bytes), view=ButtonView(self.bot))
-        ONGOING_BATTLES[msg.id] = {"p1_cords" : p1_cords, "p2_cords": p2_cords, "tank_size": tank_right.size, "bg_img" : background}
+        msg = await ctx.edit_original_message(
+            content=f"**{ctx.author.name}** <:VS:1004300296647868427>  **{opponent.name}**",
+            file=File(filename="bg.png", fp=background_bytes),
+            view=ButtonView(self.bot),
+        )
+        ONGOING_BATTLES[msg.id] = {
+            "p1_cords": p1_cords,
+            "p2_cords": p2_cords,
+            "tank_size": tank_right.size,
+            "bg_img": background,
+        }
+
 
 def setup(bot):
     bot.add_cog(Battle(bot))

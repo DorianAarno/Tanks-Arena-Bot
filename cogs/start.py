@@ -59,7 +59,7 @@ class CreatePaginator(ui.View):
             defence,
         )
 
-        favorability = (
+        tank_quality = (
             (hp + defence + attack)
             / (
                 tank_stats_range["HP"]["max"]
@@ -69,7 +69,7 @@ class CreatePaginator(ui.View):
         ) * 100
 
         await inter.send(
-            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp} \n**Attack:** {attack} \n**Defence:** {defence}\n**FR:** {favorability:,.2f}%"
+            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp} \n**Attack:** {attack} \n**Defence:** {defence}\n**TQ:** {tank_quality:,.2f}%"
         )
 
         # Stops all the buttons in this view
@@ -117,20 +117,20 @@ class Starter(Cog):
             return await ctx.send(embed=embed)
 
         atk_tank = Embed(
-            title="Attack Tank",
+            title="KNISPEL Tank",
             description="Gives you advantage over **Attacks**.",
             color=Color.blurple(),
         )
         # I didn't use File as during pagination it was causing I/O based error
-        atk_tank.set_thumbnail(url=tank_data["Attack"]["GIF"])
+        atk_tank.set_thumbnail(url=tank_data["KNISPEL"]["GIF"])
 
         hp_tank = Embed(
-            title="HP Tank",
+            title="ABRAMS Tank",
             description="Gives you advantage over **HP**.",
             color=Color.blurple(),
         )
         # I didn't use File as during pagination it was causing I/O based error
-        hp_tank.set_thumbnail(url=tank_data["HP"]["GIF"])
+        hp_tank.set_thumbnail(url=tank_data["ABRAMS"]["GIF"])
 
         embeds = [atk_tank, hp_tank]
         await ctx.send(
