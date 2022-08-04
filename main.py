@@ -1,57 +1,66 @@
+from asyncio import tasks
 from disnake import *
 from disnake.ext import commands
 import os, traceback
 import aiosqlite
 
+
 class MyBot(commands.InteractionBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.db = None
+        # self.db = None
 
-    async def db_main(self):
-        self.db = await aiosqlite.connect("main.sqlite")
-        print("Main DataBase Connected")
+    # async def db_main(self):
+    #     self.db = await aiosqlite.connect("main.sqlite")
+    #     print("Main DataBase Connected")
 
     async def commit(self):
-        await self.db.commit()
+        async with aiosqlite.connect("main.sqlite") as db:
+            await db.commit()
 
     async def execute(self, query, *values):
-        async with self.db.cursor() as cur:
-            await cur.execute(query, tuple(values))
-        await self.commit()
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                await cur.execute(query, tuple(values))
+            await db.commit()
 
     async def executemany(self, query, values):
-        async with self.db.cursor() as cur:
-            await cur.executemany(query, values)
-        await self.commit()
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                await cur.executemany(query, values)
+            await db.commit()
 
     async def fetchval(self, query, *values):
-        async with self.db.cursor() as cur:
-            exe = await cur.execute(query, tuple(values))
-            val = await exe.fetchone()
-        return val[0] if val else None
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                exe = await cur.execute(query, tuple(values))
+                val = await exe.fetchone()
+            return val[0] if val else None
 
     async def fetchrow(self, query, *values):
-        async with self.db.cursor() as cur:
-            exe = await cur.execute(query, tuple(values))
-            row = await exe.fetchmany(size=1)
-        if len(row) > 0:
-            row = [r for r in row[0]]
-        else:
-            row = None
-        return row
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                exe = await cur.execute(query, tuple(values))
+                row = await exe.fetchmany(size=1)
+            if len(row) > 0:
+                row = [r for r in row[0]]
+            else:
+                row = None
+            return row
 
     async def fetchmany(self, query, size, *values):
-        async with self.db.cursor() as cur:
-            exe = await cur.execute(query, tuple(values))
-            many = await exe.fetchmany(size)
-        return many
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                exe = await cur.execute(query, tuple(values))
+                many = await exe.fetchmany(size)
+            return many
 
     async def fetch(self, query, *values):
-        async with self.db.cursor() as cur:
-            exe = await cur.execute(query, tuple(values))
-            all = await exe.fetchall()
-        return all
+        async with aiosqlite.connect("main.sqlite") as db:
+            async with db.cursor() as cur:
+                exe = await cur.execute(query, tuple(values))
+                all = await exe.fetchall()
+            return all
 
 
 bot = MyBot(intents=Intents.default())
@@ -61,8 +70,6 @@ bot = MyBot(intents=Intents.default())
 async def on_ready():
     print("*********\nBot is Ready.\n*********")
 
-
-# bot.remove_command('help')
 
 # @bot.event
 # async def on_command_error(ctx,error):
