@@ -178,8 +178,8 @@ class PowerModal(ui.Modal):
 
             p1_cords = battle_dict["p1_cords"]
             tank_size = battle_dict["tank_size"]
-            bg_img = battle_dict["bg_img"].copy()
-            bg_img.show()
+            bg_img = battle_dict["bg_img"]
+            #bg_img.show()
             bg_img = prepare_attack_image(bg_img, p1_cords, tank_size, distance)
 
             background_bytes = BytesIO()

@@ -100,7 +100,7 @@ class Starter(Cog):
         self.bot = bot
 
     @slash_command(name="start", description="start")
-    async def start(self, ctx):
+    async def start(self, ctx: CommandInteraction):
         await ctx.response.defer()
 
         # General data about tanks will be present in this json
@@ -137,6 +137,90 @@ class Starter(Cog):
             embed=embeds[0],
             view=CreatePaginator(self.bot, embeds, ctx.author.id, tank_data),
         )
+        
+    @slash_command()
+    async def tanks(self, ctx: CommandInteraction):
+        """
+        Parent Command
+        """
+        pass
+    
+    @tanks.sub_command()
+    async def show(self, ctx: CommandInteraction):
+        """
+        Show your tanks
+        """
+        with open("assets/tanks.json") as f:
+            tank_data = json.load(f)
+
+        data = await self.bot.fetch(
+            "SELECT * FROM user_tanks WHERE user_id = $1", ctx.author.id
+        )
+        if len(data) < 1:
+            embed = Embed(title="You dont have any tanks! Choose one now from `/start`", color=Color.red())
+            return await ctx.send(embed=embed)
+        
+        embed = Embed(
+            description="Your Tanks~\n\n",
+            color=ctx.author.color
+        )
+        if ctx.author.avatar:
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+        else:
+            embed.set_author(name=ctx.author.name)
+        for n, tank in enumerate(data):
+            id, tank_type, hp, attack, defence = tank
+            tank_stats_range = tank_data[tank_type]["STATS"]
+            favorability = (
+                (hp + defence + attack)
+                / (
+                    tank_stats_range["HP"]["max"]
+                    + tank_stats_range["ATTACK"]["max"]
+                    + tank_stats_range["DEFENCE"]["max"]
+                )
+            ) * 100
+            embed.description += f"**{n+1}.** {tank_type} Tank | {favorability}%\n"
+        await ctx.send(embed=embed)
+        
+            
+    @tanks.sub_command()
+    async def info(self, ctx: CommandInteraction, serial: str):
+        with open("assets/tanks.json") as f:
+            tank_data = json.load(f)
+
+        serial = serial.upper()
+        data = await self.bot.fetchrow(
+            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2", ctx.author.id, serial
+        )
+        if len(data) < 1:
+            embed = Embed(title="You dont have that tank! Use `/tank show` to view your tanks.", color=Color.red())
+            return await ctx.send(embed=embed)
+        
+        id, tank_type, hp, attack, defence = data
+
+        embed = Embed(
+            title=f"{tank_type} Tank",
+            color=ctx.author.color
+        )
+        if ctx.author.avatar:
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+        else:
+            embed.set_author(name=ctx.author.name)
+        
+        tank_stats_range = tank_data[tank_type]["STATS"]
+        favorability = (
+            (hp + defence + attack)
+            / (
+                tank_stats_range["HP"]["max"]
+                + tank_stats_range["ATTACK"]["max"]
+                + tank_stats_range["DEFENCE"]["max"]
+            )
+        ) * 100
+        embed.set_thumbnail(url=tank_data[tank_type]["GIF"])
+        embed.description = f"Stats - \n**Hp:** {hp}\n **Attack:** {attack}\n **Defence:** {defence}\n **Favorability:** {favorability}"
+        await ctx.send(embed=embed)
+    
+        
 
 
 def setup(bot):
