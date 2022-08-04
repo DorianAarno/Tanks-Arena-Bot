@@ -3,6 +3,7 @@ from disnake import *
 from disnake.ext import commands
 import os, traceback
 import aiosqlite
+from random import randint
 
 
 class MyBot(commands.InteractionBot):
@@ -61,6 +62,59 @@ class MyBot(commands.InteractionBot):
                 exe = await cur.execute(query, tuple(values))
                 all = await exe.fetchall()
             return all
+    
+    def determine_stats(self, tank_stats_range: dict, advantage: str):
+
+        
+        def decrease_highTQ_chances(ignore_stat: str):
+            hp_max = tank_stats_range["HP"]["max"]
+            atk_max = tank_stats_range["ATTACK"]["max"]
+            def_max = tank_stats_range["DEFENCE"]["max"]
+
+            if ignore_stat != "HP":
+                hp = hp_max - ((30/100) * hp_max)
+            else:
+                hp = hp_max
+
+            if ignore_stat != "ATTACK":
+                attack = atk_max - ((30/100) * atk_max)
+            else:
+                attack = atk_max
+
+            if ignore_stat != "DEFENCE":
+                defence = def_max - ((30/100) * def_max)
+            else:
+                defence = def_max
+
+            if randint(0, 9): # If number between 1-9
+                return (round(hp), round(attack), round(defence))
+            else: # If number is 0
+                return (hp_max, atk_max, def_max)
+
+        max_ranges = decrease_highTQ_chances(advantage)
+
+        hp = randint(
+            tank_stats_range["HP"]["min"], max_ranges[0]
+        )
+        attack = randint(
+            tank_stats_range["ATTACK"]["min"], max_ranges[1]
+        )
+        defence = randint(
+            tank_stats_range["DEFENCE"]["min"], max_ranges[2]
+        )
+
+        return (hp, attack, defence)
+    
+    def get_TQ(self, tank_stats_range: dict, hp, defence, attack):
+        tank_quality = (
+            (hp + defence + attack)
+            / (
+                tank_stats_range["HP"]["max"]
+                + tank_stats_range["ATTACK"]["max"]
+                + tank_stats_range["DEFENCE"]["max"]
+            )
+        ) * 100
+        return tank_quality
 
 
 bot = MyBot(intents=Intents.default())

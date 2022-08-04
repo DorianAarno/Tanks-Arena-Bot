@@ -42,13 +42,15 @@ class CreatePaginator(ui.View):
 
         # Database integration
         tank_stats_range = self.tank_data[tank_type]["STATS"]
-        hp = randint(tank_stats_range["HP"]["min"], tank_stats_range["HP"]["max"])
-        attack = randint(
-            tank_stats_range["ATTACK"]["min"], tank_stats_range["ATTACK"]["max"]
-        )
-        defence = randint(
-            tank_stats_range["DEFENCE"]["min"], tank_stats_range["DEFENCE"]["max"]
-        )
+
+        tank_stats = self.bot.determine_stats(tank_stats_range, self.tank_data[tank_type]['ADVANTAGE'])
+        hp = tank_stats[0]
+        attack = tank_stats[1]
+        defence = tank_stats[2]
+
+        hp_max = tank_stats_range["HP"]["max"]
+        atk_max = tank_stats_range["ATTACK"]["max"]
+        def_max = tank_stats_range["DEFENCE"]["max"]
 
         await self.bot.execute(
             "INSERT INTO user_tanks(user_id, tank_type, hp, atk, def) VALUES($1, $2, $3, $4, $5)",
@@ -59,17 +61,10 @@ class CreatePaginator(ui.View):
             defence,
         )
 
-        tank_quality = (
-            (hp + defence + attack)
-            / (
-                tank_stats_range["HP"]["max"]
-                + tank_stats_range["ATTACK"]["max"]
-                + tank_stats_range["DEFENCE"]["max"]
-            )
-        ) * 100
+        tank_quality = self.bot.get_TQ(tank_stats_range, hp, defence, attack)
 
         await inter.send(
-            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp} \n**Attack:** {attack} \n**Defence:** {defence}\n**TQ:** {tank_quality:,.2f}%"
+            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp}  TQ: ({hp}/{hp_max})\n**Attack:** {attack}  TQ: ({attack}/{atk_max})\n**Defence:** {defence}  TQ: ({defence}/{def_max})\n**Total TQ:** {tank_quality:,.2f}%"
         )
 
         # Stops all the buttons in this view
@@ -99,7 +94,7 @@ class Starter(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(name="start", description="start")
+    @slash_command(name="start", description="Start your tank arena journey!")
     async def start(self, ctx: CommandInteraction):
         await ctx.response.defer()
 
@@ -171,15 +166,8 @@ class Starter(Cog):
         for n, tank in enumerate(data):
             id, tank_type, hp, attack, defence = tank
             tank_stats_range = tank_data[tank_type]["STATS"]
-            favorability = (
-                (hp + defence + attack)
-                / (
-                    tank_stats_range["HP"]["max"]
-                    + tank_stats_range["ATTACK"]["max"]
-                    + tank_stats_range["DEFENCE"]["max"]
-                )
-            ) * 100
-            embed.description += f"**{n+1}.** {tank_type} Tank | {favorability}%\n"
+            tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
+            embed.description += f"**{n+1}.** {tank_type} Tank | {tank_quality}%\n"
         await ctx.send(embed=embed)
         
             
@@ -208,16 +196,15 @@ class Starter(Cog):
             embed.set_author(name=ctx.author.name)
         
         tank_stats_range = tank_data[tank_type]["STATS"]
-        favorability = (
-            (hp + defence + attack)
-            / (
-                tank_stats_range["HP"]["max"]
-                + tank_stats_range["ATTACK"]["max"]
-                + tank_stats_range["DEFENCE"]["max"]
-            )
-        ) * 100
+        tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
+
+        hp_max = tank_data[tank_type]["STATS"]["HP"]["max"]
+        atk_max = tank_data[tank_type]["STATS"]["ATTACK"]["max"]
+        def_max = tank_data[tank_type]["STATS"]["DEFENCE"]["max"]
+
         embed.set_thumbnail(url=tank_data[tank_type]["GIF"])
-        embed.description = f"Stats - \n**Hp:** {hp}\n **Attack:** {attack}\n **Defence:** {defence}\n **Favorability:** {favorability}"
+
+        embed.description = f"Stats - \n**HP:** {hp}  TQ: ({hp}/{hp_max})\n **Attack:** {attack}  TQ: ({attack}/{atk_max})**Defence:** {defence}  TQ: ({defence}/{def_max})\n\n **Total TQ:** {tank_quality:,.2f}%"
         await ctx.send(embed=embed)
     
         
