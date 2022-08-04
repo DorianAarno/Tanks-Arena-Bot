@@ -1,10 +1,12 @@
 from disnake import *
 from disnake.ext.commands import *
 
+
 class Extras(Cog):
     """
         🔗 Extras
     """
+
     def __init__(self, bot):
         self.bot = bot
 

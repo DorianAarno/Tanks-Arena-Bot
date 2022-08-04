@@ -1,0 +1,39 @@
+{
+    "Attack": {
+        "GIF": "https://media.discordapp.net/attachments/1003927928519802955/1004276059363102830/tank_atk.gif",
+        "SERIAL": 1,
+        "STATS": {
+            "HP": {
+                "min": 15,
+                "max": 25
+            },
+            "ATTACK": {
+                "min": 10,
+                "max": 17
+            },
+            "DEFENCE": {
+                "min": 1,
+                "max": 3
+            }
+        }
+    },
+
+    "HP": {
+        "GIF": "https://media.discordapp.net/attachments/1003927928519802955/1004276059845431366/tank_hp.gif",
+        "SERIAL": 2,
+        "STATS": {
+            "HP": {
+                "min": 25,
+                "max": 30
+            },
+            "ATTACK": {
+                "min": 7,
+                "max": 13
+            },
+            "DEFENCE": {
+                "min": 3,
+                "max": 5
+            }
+        }
+    }
+}
