@@ -119,10 +119,33 @@ class MyBot(commands.InteractionBot):
 
 bot = MyBot(intents=Intents.default())
 
+async def setuptable(bot):
+    await bot.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users(
+            user_id INTEGER,
+            money INTEGER,
+            PRIMARY KEY("user_id")
+        )
+        """
+    )
+    await bot.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_tanks(
+            user_id INTEGER, 
+            tank_type TEXT,
+            serial INTEGER,  
+            hp INTEGER, 
+            atk INTEGER, 
+            def INTEGER
+        )
+        """
+    )
 
 @bot.event
 async def on_ready():
     print("*********\nBot is Ready.\n*********")
+    await setuptable(bot)
 
 
 # @bot.event
