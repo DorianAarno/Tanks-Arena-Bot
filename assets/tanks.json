@@ -16,7 +16,9 @@
                 "max": 3
             }
         },
-        "ADVANTAGE": "ATTACK"
+        "ADVANTAGE": "ATTACK",
+        "COST": 8
+
     },
 
     "ABRAMS": {
@@ -36,6 +38,7 @@
                 "max": 5
             }
         },
-        "ADVANTAGE": "HP"
+        "ADVANTAGE": "HP",
+        "COST": 8
     }
 }
