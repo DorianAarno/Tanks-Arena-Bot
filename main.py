@@ -118,6 +118,7 @@ async def setuptable(bot):
         CREATE TABLE IF NOT EXISTS users(
             user_id INTEGER,
             money INTEGER,
+            battle_tank TEXT,
             PRIMARY KEY("user_id")
         )
         """
