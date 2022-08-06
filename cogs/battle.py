@@ -57,12 +57,17 @@ def prepare_attack_image(cords, tank_size, distance, battle_dict):
     explosion_y = GROUND_LEVEL - explosion.size[1]
 
     # Image will be regenerated to edit the HP bar
+    p1_max_hp = battle_dict["p1_tank"]["max_hp"]
     p1_hp = battle_dict["p1_tank"]["hp"]
+    print("p1: ", p1_max_hp, p1_hp)
+
+    p2_max_hp = battle_dict["p2_tank"]["max_hp"]
     p2_hp = battle_dict["p2_tank"]["hp"]
+    print("p2: ", p2_max_hp, p2_hp)
 
     # TODO: Find out ratio of HP and make sure HP bar works properly
-    tank_left = give_tank_image(f"assets/{battle_dict['p1_tank']['tank']}.png",)
-    tank_right = give_tank_image(f"assets/{battle_dict['p2_tank']['tank']}.png",)
+    tank_left = give_tank_image(f"assets/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp)
+    tank_right = give_tank_image(f"assets/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp)
     background = Image.open("assets/bg.png")
 
     tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
@@ -381,6 +386,7 @@ class Battle(Cog):
             "p1_tank": {
                 "tank": p1_tank[1],
                 "coords": p1_cords,
+                "max_hp": p1_tank[2],
                 "hp": p1_tank[2],
                 "atk": p1_tank[3],
                 "def": p1_tank[4],
@@ -389,6 +395,7 @@ class Battle(Cog):
             "p2_tank": {
                 "tank": p2_tank[1],
                 "coords": p2_cords,
+                "max_hp": p2_tank[2],
                 "hp": p2_tank[2],
                 "atk": p2_tank[3],
                 "def": p2_tank[4],
