@@ -180,15 +180,13 @@ class Starter(Cog):
         await ctx.send(embed=embed)
 
     @tanks.sub_command()
-    async def info(self, ctx: CommandInteraction, serial: str):
+    async def info(self, ctx: CommandInteraction, serial: int):
         with open("assets/tanks.json") as f:
             tank_data = json.load(f)
 
-        serial = serial.upper()
-        data = await self.bot.fetchrow(
-            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
+        data = await self.bot.fetch(
+            "SELECT * FROM user_tanks WHERE user_id = $1",
             ctx.author.id,
-            serial,
         )
         if len(data) < 1:
             embed = Embed(
@@ -197,25 +195,27 @@ class Starter(Cog):
             )
             return await ctx.send(embed=embed)
 
-        id, tank_type, hp, attack, defence = data
+        for i, entry in enumerate(data):
+            if i + 1 == serial:
+                id, tank_type, hp, attack, defence = entry
 
-        embed = Embed(title=f"{tank_type} Tank", color=Color(0x2E3135))
-        if ctx.author.avatar:
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
-        else:
-            embed.set_author(name=ctx.author.name)
+                embed = Embed(title=f"{tank_type} Tank", color=Color(0x2E3135))
+                if ctx.author.avatar:
+                    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+                else:
+                    embed.set_author(name=ctx.author.name)
 
-        tank_stats_range = tank_data[tank_type]["STATS"]
-        tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
+                tank_stats_range = tank_data[tank_type]["STATS"]
+                tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
 
-        hp_max = tank_data[tank_type]["STATS"]["HP"]["max"]
-        atk_max = tank_data[tank_type]["STATS"]["ATTACK"]["max"]
-        def_max = tank_data[tank_type]["STATS"]["DEFENCE"]["max"]
+                hp_max = tank_data[tank_type]["STATS"]["HP"]["max"]
+                atk_max = tank_data[tank_type]["STATS"]["ATTACK"]["max"]
+                def_max = tank_data[tank_type]["STATS"]["DEFENCE"]["max"]
 
-        embed.set_thumbnail(url=tank_data[tank_type]["GIF"])
+                embed.set_thumbnail(url=tank_data[tank_type]["GIF"])
 
-        embed.description = f"Stats - \n**HP:** {hp}  TQ: ({hp}/{hp_max})\n **Attack:** {attack}  TQ: ({attack}/{atk_max})**Defence:** {defence}  TQ: ({defence}/{def_max})\n\n **Total TQ:** {tank_quality:,.2f}%"
-        await ctx.send(embed=embed)
+                embed.description = f"Stats - \n**HP:** {hp}  TQ: ({hp}/{hp_max})\n **Attack:** {attack}  TQ: ({attack}/{atk_max})**Defence:** {defence}  TQ: ({defence}/{def_max})\n\n **Total TQ:** {tank_quality:,.2f}%"
+                await ctx.send(embed=embed)
 
     @tanks.sub_command()
     async def market(self, ctx: CommandInteraction):
