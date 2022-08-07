@@ -208,8 +208,9 @@ async def get_tanks(bot, p1, p2):
             "SELECT battle_tank FROM users WHERE user_id = ?",
             p1.id
         )
+        t_type, hp, atck, defe = battle_tank
         for d in data_p1:
-            if d[2] == battle_tank:
+            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
                 tank_p1 = d
     data_p2 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
     tank_p2 = data_p2[0]
@@ -218,8 +219,9 @@ async def get_tanks(bot, p1, p2):
             "SELECT battle_tank FROM users WHERE user_id = ?",
             p2.id
         )
+        t_type, hp, atck, defe = battle_tank
         for d in data_p2:
-            if d[2] == battle_tank:
+            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
                 tank_p2 = d
 
     return (tank_p1, tank_p2)

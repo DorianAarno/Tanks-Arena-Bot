@@ -182,6 +182,13 @@ class Starter(Cog):
 
     @tanks.sub_command()
     async def info(self, ctx: CommandInteraction, serial: int):
+        """
+        Show a info about single tank
+        
+        Parameters
+        ----------
+        serial: Enter the serial of the tank based on /tank show
+        """
         with open("assets/tanks.json") as f:
             tank_data = json.load(f)
 
@@ -310,30 +317,67 @@ class Starter(Cog):
         await ctx.send(embed=embed)
         
     @tanks.sub_command()
-    async def remove(self, ctx: CommandInteraction, serial: str):
+    async def remove(self, ctx: CommandInteraction, serial: int):
         """
         Remove a tank from your inventory
+        
+        Parameters
+        ----------
+        serial: Enter the serial of the tank based on /tank show
         """
         serial = serial.upper()
-        data = await self.bot.fetchrow(
+        data = await self.bot.fetch(
             "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
             ctx.author.id,
             serial,
         )
-        if data:
-            await self.bot.execute(
-                "DELETE FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
-                ctx.author.id, serial
-            )
-            content = "Tank have been removed succesfully!"
-        else:
-            content = "uh oh.. You dont own that tank"
         
         embed = Embed(
-                title=content, color=Color.red()
+                title="You dont own a tank of that serial", color=Color.red()
             )
+        for i, tank in enumerate(data):
+            if i + 1 == serial:
+                id, tank_type, hp, attack, defence = tank
+                await self.bot.execute(
+                    "DELETE FROM user_tanks WHERE user_id = $1, tank_type = $2, hp = $3, atk = $4 AND def = $5",
+                    ctx.author.id, tank_type, hp, attack, defence
+                )
+                embed.title = "Tank have been removed succesfully!"
+                embed.color = Color.green()
+
         await ctx.send(embed=embed)
 
+    @tanks.sub_command()
+    async def set(self, ctx: CommandInteraction, serial: int):
+        """
+        Set a tank for your battle
+        
+        Parameters
+        ----------
+        serial: Enter the serial of the tank based on /tank show
+        """
+        serial = serial.upper()
+        data = await self.bot.fetch(
+            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
+            ctx.author.id,
+            serial,
+        )
+        
+        embed = Embed(
+                title="You dont own a tank of that serial", color=Color.red()
+            )
+        for i, tank in enumerate(data):
+            if i + 1 == serial:
+                id, tank_type, hp, attack, defence = tank
+                j = json.dumps([tank_type, hp, attack, defence])
+                await self.bot.execute(
+                    "UPDATE users SET battle_tank = $1 WHERE user_id = $2",
+                    j, ctx.author.id
+                )
+                embed.title = "Tank is ready for battle!"
+                embed.color = Color.green()
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Starter(bot))
