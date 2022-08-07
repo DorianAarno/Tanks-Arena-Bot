@@ -15,6 +15,8 @@ G = 9.8
 ONGOING_BATTLES = {}
 GROUND_LEVEL = 825
 
+# TODO: Confirm challenge by opponent, give out coins in the end, edit get_tanks to fetch the default tank
+
 
 def compute_distance(power, angle, msg_id):
     theta = angle * np.pi / 180
