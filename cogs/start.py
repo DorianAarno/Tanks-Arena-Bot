@@ -230,23 +230,24 @@ class Starter(Cog):
             tank = tank_data[tank_name]
             embed.add_field(
                 name="\u200b",
-                value=f"🔹**{tank_name} Tank** \n>>> Serial: **`{tank['SERIAL']}`** \nAdvantage: **`{tank['ADVANTAGE']}`** \n**Cost: `{tank['COST']}`**",
+                value=f"🔹**{tank_name} Tank** \n>>> Advantage: **`{tank['ADVANTAGE']}`** \n**Cost: `{tank['COST']}`**",
                 inline=False,
             )
 
         await ctx.response.send_message(embed=embed)
 
     @tanks.sub_command()
-    async def buy(self, ctx: CommandInteraction, serial: int):
+    async def buy(self, ctx: CommandInteraction, serial: str):
         """
         Buy a tank from market
         """
         with open("assets/tanks.json") as f:
             tank_data = json.load(f)
 
+        serial = serial.upper()
         tank_type = None
         for tank in tank_data:
-            if tank_data[tank]["SERIAL"] == serial:
+            if tank == serial:
                 tank_type = tank
 
         if tank_type is None:
@@ -305,6 +306,31 @@ class Starter(Cog):
             description=f"You've successfully bought **{tank_type}** Tank. \n\n**HP:** {hp}  TQ: ({hp}/{hp_max})\n**Attack:** {attack}  TQ: ({attack}/{atk_max})\n**Defence:** {defence}  TQ: ({defence}/{def_max})\n**Total TQ:** {tank_quality:,.2f}%",
             color=Color(0x2E3135),
         )
+        await ctx.send(embed=embed)
+        
+    @tanks.sub_command()
+    async def remove(self, ctx: CommandInteraction, serial: str):
+        """
+        Remove a tank from your inventory
+        """
+        serial = serial.upper()
+        data = await self.bot.fetchrow(
+            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
+            ctx.author.id,
+            serial,
+        )
+        if data:
+            await self.bot.execute(
+                "DELETE FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
+                ctx.author.id, serial
+            )
+            content = "Tank have been removed succesfully!"
+        else:
+            content = "uh oh.. You dont own that tank"
+        
+        embed = Embed(
+                title=content, color=Color.red()
+            )
         await ctx.send(embed=embed)
 
 
