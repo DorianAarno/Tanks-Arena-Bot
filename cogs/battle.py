@@ -201,10 +201,28 @@ def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict
 
 async def get_tanks(bot, p1, p2):
     # TODO Later change to fetch the default tank
-    data_p1 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = {p1.id}")
-    data_p2 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
+    data_p1 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p1.id}")
+    tank_p1 = data_p1[0]
+    if len(data_p1) > 1:
+        battle_tank = await bot.fetchval(
+            "SELECT battle_tank FROM users WHERE user_id = ?",
+            p1.id
+        )
+        for d in data_p1:
+            if d[2] == battle_tank:
+                tank_p1 = d
+    data_p2 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
+    tank_p2 = data_p2[0]
+    if len(data_p2) > 1:
+        battle_tank = await bot.fetchval(
+            "SELECT battle_tank FROM users WHERE user_id = ?",
+            p2.id
+        )
+        for d in data_p2:
+            if d[2] == battle_tank:
+                tank_p2 = d
 
-    return (data_p1, data_p2)
+    return (tank_p1, tank_p2)
 
 
 def consume_hp(self, battle_dict, player):

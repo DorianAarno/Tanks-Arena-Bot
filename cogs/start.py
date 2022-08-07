@@ -65,9 +65,10 @@ class CreatePaginator(ui.View):
             defence,
         )
         await self.bot.execute(
-            "INSERT OR IGNORE INTO users(user_id, money) VALUES($1, $2)",
+            "INSERT OR IGNORE INTO users(user_id, money, battle_tank) VALUES($1, $2, $3)",
             inter.author.id,
             0,
+            tank_type
         )
 
         tank_quality = self.bot.get_TQ(tank_stats_range, hp, defence, attack)
