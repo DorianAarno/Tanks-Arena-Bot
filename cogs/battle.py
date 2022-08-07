@@ -200,7 +200,7 @@ def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict
 
 
 async def get_tanks(bot, p1, p2):
-    # Later change to fetch the default tank
+    # TODO Later change to fetch the default tank
     data_p1 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = {p1.id}")
     data_p2 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
 
@@ -342,6 +342,30 @@ class ButtonView(ui.View):
     async def atk_button(self, btn, inter: MessageInteraction):
         await inter.response.send_modal(PowerModal())
 
+class ConfirmationButtons(ui.View):
+    def __init__(self, authorid):
+        super().__init__(timeout=120.0)
+        self.value = None
+        self.authorid = authorid
+    @ui.button(emoji="✖️", style=ButtonStyle.red)
+    async def first_button(self, button, inter):
+        if inter.author.id != self.authorid:
+            return await inter.send("You cannot interact with these buttons.", ephemeral=True)
+        self.value = False
+        for button in self.children:
+            button.disabled = True
+        await inter.response.edit_message(view=self)
+        self.stop()
+    @ui.button(emoji="✔️", style=ButtonStyle.green)
+    async def second_button(self, button, inter):
+        if inter.author.id != self.authorid:
+            return await inter.send("You cannot interact with these buttons.", ephemeral=True)
+        self.value = True
+        for button in self.children:
+            button.disabled = True
+        await inter.response.edit_message(view=self)
+        self.stop()
+
 
 class Battle(Cog):
     """
@@ -366,8 +390,6 @@ class Battle(Cog):
                 "You cannot have a battle with a bot or with yourself!"
             )
 
-        # Opening and preparing all the assets
-        background = Image.open("assets/bg.png")
 
         # made a function to give tank images
         p1_tank, p2_tank = await get_tanks(self.bot, ctx.author, opponent)
@@ -379,6 +401,20 @@ class Battle(Cog):
             return await ctx.send(
                 f"**{opponent.name}** does not own any tank. Run `/start` to select your first battle tank!"
             )
+
+        view = ConfirmationButtons(opponent.id)
+        msg = await ctx.send(f"{opponent.mention} You've been invited to a battle by {ctx.author.mention}!", view=view)
+        await view.wait()
+        if view.value is None:
+            await ctx.edit_original_message(content="Timed Out.")
+            return
+        elif not view.value:
+            await ctx.edit_original_message(content=f"{opponent.mention} rejected the battle invitation.")
+            return 
+
+        # Opening and preparing all the assets
+        background = Image.open("assets/bg.png")
+
         tank_left = give_tank_image(f"assets/{p1_tank[1]}.png", 100)
         tank_right = give_tank_image(f"assets/{p2_tank[1]}.png", 100)
 
