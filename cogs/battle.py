@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from io import BytesIO
-from random import randint, uniform
+from random import uniform, choice
 
 # from matplotlib import pyplot as plt
 
@@ -15,8 +15,6 @@ G = 9.8
 ONGOING_BATTLES = {}
 GROUND_LEVEL = 825
 
-# TODO: edit tank image after damage
-
 
 def compute_distance(power, angle, msg_id):
     theta = angle * np.pi / 180
@@ -27,8 +25,6 @@ def compute_distance(power, angle, msg_id):
     xt = x0 + (v0 * t * np.cos(theta))
 
     distance = round((xt - x0) * ONGOING_BATTLES[msg_id]["CONSTANT"])
-    # if distance > 3000:
-    #     distance = 3000
 
     return distance
 
@@ -59,13 +55,10 @@ def prepare_attack_image(cords, tank_size, distance, battle_dict):
     # Image will be regenerated to edit the HP bar
     p1_max_hp = battle_dict["p1_tank"]["max_hp"]
     p1_hp = battle_dict["p1_tank"]["hp"]
-    print("p1: ", p1_max_hp, p1_hp)
 
     p2_max_hp = battle_dict["p2_tank"]["max_hp"]
     p2_hp = battle_dict["p2_tank"]["hp"]
-    print("p2: ", p2_max_hp, p2_hp)
 
-    # TODO: Find out ratio of HP and make sure HP bar works properly
     tank_left = give_tank_image(f"assets/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp)
     tank_right = give_tank_image(f"assets/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp)
     background = Image.open("assets/bg.png")
@@ -75,7 +68,6 @@ def prepare_attack_image(cords, tank_size, distance, battle_dict):
     background.paste(
         tank_right, battle_dict["p2_tank"]["coords"], mask=tank_right,
     )
-    # We subtracted width to make sure the tank does not go out of the background
     background.paste(
         tank_left, battle_dict["p1_tank"]["coords"], mask=tank_left,
     )
@@ -105,10 +97,10 @@ def give_tank_image(path, total_health, current_health=None):
     width = tank.size[1] - x_cord
     padding = 5  # padding between tank and bar and name
 
-    # gives the health ratio
-    health_ratio = width / total_health
-    # gives the bar width
-    bar_width = health_ratio * current_health
+    # gives the bar_width
+    bar_width = (current_health / total_health) * 100
+
+    total_possible_width = 100
 
     # Bright Red
     bar_color = (255, 0, 0)
@@ -125,12 +117,12 @@ def give_tank_image(path, total_health, current_health=None):
     draw.ellipse((x_cord, y_cord, x_cord + height, y_cord + height), fill=bg_color)
     # make the bar circle at the end
     draw.ellipse(
-        (x_cord + width, y_cord, x_cord + width + height, y_cord + height),
+        (x_cord + total_possible_width, y_cord, x_cord + total_possible_width + height, y_cord + height),
         fill=bg_color,
     )
     # fill the middle portion
     draw.rectangle(
-        (x_cord + (height / 2), y_cord, x_cord + width + (height / 2), y_cord + height),
+        (x_cord + (height / 2), y_cord, x_cord + total_possible_width + (height / 2), y_cord + height),
         fill=bg_color,
     )
 
@@ -168,9 +160,41 @@ def give_tank_image(path, total_health, current_health=None):
     return im
 
 
-def set_power(power, angle, msg_id):
-    distance = compute_distance(power, angle, msg_id)
-    return f"Power : {power} \nAngle : {angle} \nDistance Covered : {distance}"
+def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict):
+
+    hit = confirm_hit(attacker_coords, defender_coords, distance, battle_dict)
+
+    if hit:
+        remarks = [f"Brutal! **{author.name}** dealt damage!", "That's a hit!", "No mercy!", "Keep it up soldier!", ]
+        return choice(remarks)
+    
+    if attacker_coords[0] <= 800:
+        distance += attacker_coords[0] 
+        distance += battle_dict['tank_size'][0]
+        attacker_coords = (2200 + attacker_coords[0], attacker_coords[1])
+    else:
+        distance += 3000 - attacker_coords[0]
+        distance = distance - battle_dict['tank_size'][0]
+    
+    
+    if attacker_coords[0] in [x for x in range(
+        distance, distance+201
+    )]:
+        remarks = [
+            'Close call!',
+            "Almost there! keep adjusting",
+            "That's right! You can do it",
+        ]
+        return choice(remarks)
+
+    else:
+        remarks = [
+            "Adjustment is the key to success. Keep adjusting the power and angle until you find the perfect one!",
+            "Don't let your opponent figure out the adjustments before you!",
+            "Every tank has it's own special stat, some might be good in attack while others in defence or HP. ",
+            "**Did You know?** \nEvery tank's name makes sense if you search it up."
+        ]
+        return choice(remarks)
 
 
 async def get_tanks(bot, p1, p2):
@@ -181,12 +205,40 @@ async def get_tanks(bot, p1, p2):
     return (data_p1, data_p2)
 
 
-def consume_hp(victim_hp, victim_defence, attack):
-    return victim_hp - (attack - victim_defence)
+def consume_hp(self, battle_dict, player):
+    if player == 'p1':
+        enemy = 'p2'
+    else:
+        enemy = 'p1'
 
+    hp = battle_dict[f"{enemy}_tank"]["hp"]
+    defence = battle_dict[f"{enemy}_tank"]["def"]
+    player_atk = battle_dict[f"{player}_tank"]["atk"]
+
+    battle_dict[f"{enemy}_tank"]["hp"] = hp - (player_atk - defence)
+
+    if battle_dict[f'{enemy}_tank']['hp'] <= 0:
+        self.game_over = True
+
+
+
+def confirm_hit(attacker_coords, defender_coords, distance, battle_dict):
+    # This iteration is an estimate to get coordinates around the tank
+    # This may cover some extra coordinates to cover the dimensions of the explosion
+
+    if distance + attacker_coords[0] + battle_dict["tank_size"][0] in [
+        x
+        for x in range(
+            defender_coords[0] - 10,
+            defender_coords[0] + battle_dict["tank_size"][0] + 68,
+        )
+    ]:
+        return True
+        
 
 class PowerModal(ui.Modal):
     def __init__(self) -> None:
+        self.game_over = False
         components = [
             ui.TextInput(
                 label="Rate",
@@ -224,8 +276,8 @@ class PowerModal(ui.Modal):
                     angle = int(value)
                 else:
                     await inter.send("Angle needs to be between 20-80", ephemeral=True)
+
         if power and angle:
-            stuff = set_power(power, angle, inter.message.id)
 
             distance = compute_distance(power, angle, inter.message.id)
 
@@ -243,43 +295,16 @@ class PowerModal(ui.Modal):
                 attacker_coords = p1_cords
                 defender_coords = p2_cords
 
-                # This iteration is an estimate to get coordinates around the tank
-                # This may cover some extra coordinates to cover the dimensions of the explosion
-                if distance + attacker_coords[0] + battle_dict["tank_size"][0] in [
-                    x
-                    for x in range(
-                        defender_coords[0] - 10,
-                        defender_coords[0] + battle_dict["tank_size"][0] + 68,
-                    )
-                ]:
-                    # Consume HP code here
-                    hp = battle_dict["p1_tank"]["hp"]
-                    defence = battle_dict["p1_tank"]["def"]
-                    p2_atk = battle_dict["p2_tank"]["atk"]
-                    battle_dict["p1_tank"]["hp"] = consume_hp(hp, defence, p2_atk)
-                    print("hit")
+                if confirm_hit(attacker_coords, defender_coords, distance, battle_dict,):
+                    consume_hp(self, battle_dict, 'p1')
 
             else:
                 attacker_coords = p2_cords
                 defender_coords = p1_cords
 
-                # This iteration is an estimate to get coordinates around the tank
-                # This may cover some extra coordinates to cover the dimensions of the explosion
-                if distance + (3000 - attacker_coords[0]) + battle_dict["tank_size"][
-                    0
-                ] in [
-                    x
-                    for x in range(
-                        (3000 - defender_coords[0]) - 10,
-                        (3000 - defender_coords[0]) + battle_dict["tank_size"][0] + 68,
-                    )
-                ]:
-                    # Consume HP code here
-                    hp = battle_dict["p2_tank"]["hp"]
-                    defence = battle_dict["p2_tank"]["def"]
-                    p1_atk = battle_dict["p1_tank"]["atk"]
-                    battle_dict["p2_tank"]["hp"] = consume_hp(hp, defence, p1_atk)
-                    print("hit")
+                if confirm_hit((3000 - attacker_coords[0], attacker_coords[1]), (3000 - defender_coords[0], defender_coords[1]), distance, battle_dict, ):
+                    consume_hp(self, battle_dict, 'p2')
+
 
             tank_size = battle_dict["tank_size"]
 
@@ -291,13 +316,19 @@ class PowerModal(ui.Modal):
             bg_img.save(background_bytes, "PNG")
             background_bytes.seek(0)
 
-            await inter.send("You have attacked!", ephemeral=True)
+            await inter.send("You have successfully attacked!", ephemeral=True)
 
             await inter.message.edit(
-                content=stuff,
+                content=give_remarks(inter.author, attacker_coords, defender_coords, distance, battle_dict),
                 file=File(filename="bg.png", fp=background_bytes),
                 attachments=[],
             )
+
+            if self.game_over:
+                await inter.message.edit(
+                    f"{inter.author.mention} has won the game!",
+                    view=None
+                )
 
 
 class ButtonView(ui.View):
@@ -349,10 +380,6 @@ class Battle(Cog):
         tank_left = give_tank_image(f"assets/{p1_tank[1]}.png", 100)
         tank_right = give_tank_image(f"assets/{p2_tank[1]}.png", 100)
 
-        print(f"Background Dimensions: {background.width, background.height}")
-        # It'll be good if our tank dimensions are same
-        print(f"Tank Dimensions: {tank_left.width, tank_left.height}")
-
         # flipping the right tank
         tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
 
@@ -368,11 +395,10 @@ class Battle(Cog):
         background.paste(
             tank_right, p2_cords, mask=tank_right,
         )
-        # We subtracted width to make sure the tank does not go out of the background
+
         background.paste(
             tank_left, p1_cords, mask=tank_left,
         )
-        # print(p1_cords, p2_cords)
         background_bytes = BytesIO()
         background.save(background_bytes, "PNG")
         background_bytes.seek(0)
@@ -386,19 +412,19 @@ class Battle(Cog):
             "p1_tank": {
                 "tank": p1_tank[1],
                 "coords": p1_cords,
-                "max_hp": p1_tank[2],
-                "hp": p1_tank[2],
-                "atk": p1_tank[3],
-                "def": p1_tank[4],
+                "max_hp": p1_tank[3],
+                "hp": p1_tank[3],
+                "atk": p1_tank[4],
+                "def": p1_tank[5],
                 "author": ctx.author,
             },
             "p2_tank": {
                 "tank": p2_tank[1],
                 "coords": p2_cords,
-                "max_hp": p2_tank[2],
-                "hp": p2_tank[2],
-                "atk": p2_tank[3],
-                "def": p2_tank[4],
+                "max_hp": p2_tank[3],
+                "hp": p2_tank[3],
+                "atk": p2_tank[4],
+                "def": p2_tank[5],
                 "author": opponent,
             },
             "tank_size": tank_right.size,

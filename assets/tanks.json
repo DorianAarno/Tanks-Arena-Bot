@@ -5,7 +5,7 @@
         "STATS": {
             "HP": {
                 "min": 15,
-                "max": 22
+                "max": 25
             },
             "ATTACK": {
                 "min": 10,
@@ -26,8 +26,8 @@
         "SERIAL": 2,
         "STATS": {
             "HP": {
-                "min": 22,
-                "max": 28
+                "min": 25,
+                "max": 30
             },
             "ATTACK": {
                 "min": 7,
