@@ -1,7 +1,6 @@
 import numpy as np
-import random
 from io import BytesIO
-from random import uniform, choice
+from random import uniform, choice, randint
 
 # from matplotlib import pyplot as plt
 
@@ -15,7 +14,7 @@ G = 9.8
 ONGOING_BATTLES = {}
 GROUND_LEVEL = 825
 
-# TODO: Confirm challenge by opponent, give out coins in the end, edit get_tanks to fetch the default tank
+# TODO: give out coins in the end
 
 
 def compute_distance(power, angle, msg_id):
@@ -34,12 +33,12 @@ def compute_distance(power, angle, msg_id):
 def prepare_attack_image(cords, tank_size, distance, battle_dict):
     explosion_lst = ["explosion.png", "explosion2.png", "explosion3.png"]
 
-    nozzle = Image.open("assets/nozzle.png")
+    nozzle = Image.open("assets/Attacks/nozzle.png")
     nozzle = nozzle.resize((120, 120))
     if cords[0] <= 800:
         nozzle = nozzle.transpose(Image.FLIP_LEFT_RIGHT)
 
-    explosion = Image.open(f"assets/{random.choice(explosion_lst)}")
+    explosion = Image.open(f"assets/Attacks/{choice(explosion_lst)}")
     explosion = explosion.resize((150, 150))
 
     if cords[0] <= 800:
@@ -61,9 +60,9 @@ def prepare_attack_image(cords, tank_size, distance, battle_dict):
     p2_max_hp = battle_dict["p2_tank"]["max_hp"]
     p2_hp = battle_dict["p2_tank"]["hp"]
 
-    tank_left = give_tank_image(f"assets/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp)
-    tank_right = give_tank_image(f"assets/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp)
-    background = Image.open("assets/bg.png")
+    tank_left = give_tank_image(f"assets/Tanks/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp)
+    tank_right = give_tank_image(f"assets/Tanks/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp)
+    background = Image.open("assets/Backgrounds/bg.png")
 
     tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
 
@@ -200,29 +199,22 @@ def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict
 
 
 async def get_tanks(bot, p1, p2):
-    # TODO Later change to fetch the default tank
-    data_p1 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p1.id}")
-    tank_p1 = data_p1[0]
-    if len(data_p1) > 1:
-        battle_tank = await bot.fetchval(
-            "SELECT battle_tank FROM users WHERE user_id = ?",
-            p1.id
-        )
-        t_type, hp, atck, defe = battle_tank
-        for d in data_p1:
-            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
-                tank_p1 = d
-    data_p2 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
-    tank_p2 = data_p2[0]
-    if len(data_p2) > 1:
-        battle_tank = await bot.fetchval(
-            "SELECT battle_tank FROM users WHERE user_id = ?",
-            p2.id
-        )
-        t_type, hp, atck, defe = battle_tank
-        for d in data_p2:
-            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
-                tank_p2 = d
+
+    serial_p1 = await bot.fetchval(f"SELECT battle_tank FROM users WHERE user_id = {p1.id}")
+    
+    if serial_p1:
+        tank_p1 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = $1 and serial = $2", p1.id, serial_p1)
+
+    else:
+        tank_p1 = None
+
+    serial_p2 = await bot.fetchval(f"SELECT battle_tank FROM users WHERE user_id = {p2.id}")
+    
+    if serial_p2:
+        tank_p2 = await bot.fetchrow(f"SELECT * FROM user_tanks WHERE user_id = $1 and serial = $2", p2.id, serial_p2)
+ 
+    else:
+        tank_p2 = None
 
     return (tank_p1, tank_p2)
 
@@ -433,16 +425,16 @@ class Battle(Cog):
             return 
 
         # Opening and preparing all the assets
-        background = Image.open("assets/bg.png")
+        background = Image.open("assets/Backgrounds/bg.png")
 
-        tank_left = give_tank_image(f"assets/{p1_tank[1]}.png", 100)
-        tank_right = give_tank_image(f"assets/{p2_tank[1]}.png", 100)
+        tank_left = give_tank_image(f"assets/Tanks/{p1_tank[1]}.png", 100)
+        tank_right = give_tank_image(f"assets/Tanks/{p2_tank[1]}.png", 100)
 
         # flipping the right tank
         tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
 
-        random_right_x = random.randint(1, 800)
-        random_left_x = random.randint(1, 800)
+        random_right_x = randint(1, 800)
+        random_left_x = randint(1, 800)
 
         p1_cords = (random_left_x, (GROUND_LEVEL - tank_left.height))
         p2_cords = (
@@ -470,19 +462,19 @@ class Battle(Cog):
             "p1_tank": {
                 "tank": p1_tank[1],
                 "coords": p1_cords,
-                "max_hp": p1_tank[3],
-                "hp": p1_tank[3],
-                "atk": p1_tank[4],
-                "def": p1_tank[5],
+                "max_hp": p1_tank[2],
+                "hp": p1_tank[2],
+                "atk": p1_tank[3],
+                "def": p1_tank[4],
                 "author": ctx.author,
             },
             "p2_tank": {
                 "tank": p2_tank[1],
                 "coords": p2_cords,
-                "max_hp": p2_tank[3],
-                "hp": p2_tank[3],
-                "atk": p2_tank[4],
-                "def": p2_tank[5],
+                "max_hp": p2_tank[2],
+                "hp": p2_tank[2],
+                "atk": p2_tank[3],
+                "def": p2_tank[4],
                 "author": opponent,
             },
             "tank_size": tank_right.size,

@@ -1,17 +1,14 @@
-import json
-from random import randint
 
 from disnake import *
 from disnake.ext.commands import *
 
 
 class CreatePaginator(ui.View):
-    def __init__(self, bot, embeds: list, author: int, tank_data: dict):
+    def __init__(self, bot, embeds: list, author: int,):
         super().__init__(timeout=None)
         self.bot = bot
         self.embeds = embeds
         self.author = author
-        self.tank_data = tank_data
         self.CurrentEmbed = 0
 
     @ui.button(emoji="⬅️", style=ButtonStyle.grey)
@@ -38,14 +35,13 @@ class CreatePaginator(ui.View):
     @ui.button(label="Confirm", style=ButtonStyle.green)
     async def confirm(self, button, inter):
         user_selected_tank = self.embeds[self.CurrentEmbed].title
-        tank_type = user_selected_tank.replace(" Tank", "")
+        name = user_selected_tank.replace(" Tank", "")
 
         # Database integration
-        tank_stats_range = self.tank_data[tank_type]["STATS"]
-        serial = self.tank_data[tank_type]["SERIAL"]
+        tank_stats_range = self.bot.get_tank_details(name)["STATS"]
 
         tank_stats = self.bot.determine_stats(
-            tank_stats_range, self.tank_data[tank_type]["ADVANTAGE"]
+            tank_stats_range,  self.bot.get_tank_details(name)["ADVANTAGE"]
         )
         hp = tank_stats[0]
         attack = tank_stats[1]
@@ -56,25 +52,25 @@ class CreatePaginator(ui.View):
         def_max = tank_stats_range["DEFENCE"]["max"]
 
         await self.bot.execute(
-            "INSERT INTO user_tanks(user_id, tank_type, serial, hp, atk, def) VALUES($1, $2, $3, $4, $5, $6)",
+            "INSERT INTO user_tanks(user_id, name, hp, atk, def, serial) VALUES($1, $2, $3, $4, $5, $6)",
             inter.author.id,
-            tank_type,
-            serial,
+            name,
             hp,
             attack,
             defence,
+            1,
         )
         await self.bot.execute(
             "INSERT OR IGNORE INTO users(user_id, money, battle_tank) VALUES($1, $2, $3)",
             inter.author.id,
             0,
-            tank_type
+            1
         )
 
         tank_quality = self.bot.get_TQ(tank_stats_range, hp, defence, attack)
 
         await inter.send(
-            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp}  TQ: ({hp}/{hp_max})\n**Attack:** {attack}  TQ: ({attack}/{atk_max})\n**Defence:** {defence}  TQ: ({defence}/{def_max})\n**Total TQ:** {tank_quality:,.2f}%"
+            f"You've successfully selected **{user_selected_tank}**. \n\n**HP:** {hp}  TQ: ({hp}/{hp_max})\n**Attack:** {attack}  TQ: ({attack}/{atk_max})\n**Defence:** {defence}  TQ: ({defence}/{def_max})\n**Total TQ:** {tank_quality}%"
         )
 
         # Stops all the buttons in this view
@@ -108,16 +104,13 @@ class Starter(Cog):
     async def start(self, ctx: CommandInteraction):
         await ctx.response.defer()
 
-        # General data about tanks will be present in this json
-        with open("assets/tanks.json") as f:
-            tank_data = json.load(f)
-
         data = await self.bot.fetchrow(
             "SELECT * FROM user_tanks WHERE user_id = $1", ctx.author.id
         )
         if data:
+            id, name, hp, attack, defence, serial = data
             embed = Embed(title="You've already selected a starter!", color=Color.red())
-            embed.set_thumbnail(url=tank_data[data[1]]["GIF"])
+            embed.set_thumbnail(url=self.bot.get_tank_details(name)["GIF"])
 
             return await ctx.send(embed=embed)
 
@@ -126,258 +119,22 @@ class Starter(Cog):
             description="Gives you advantage over **Attacks**.",
             color=Color.blurple(),
         )
-        # I didn't use File as during pagination it was causing I/O based error
-        atk_tank.set_thumbnail(url=tank_data["KNISPEL"]["GIF"])
+
+        atk_tank.set_thumbnail(url=self.bot.get_tank_details("KNISPEL")["GIF"])
 
         hp_tank = Embed(
             title="ABRAMS Tank",
             description="Gives you advantage over **HP**.",
             color=Color.blurple(),
         )
-        # I didn't use File as during pagination it was causing I/O based error
-        hp_tank.set_thumbnail(url=tank_data["ABRAMS"]["GIF"])
+
+        hp_tank.set_thumbnail(url=self.bot.get_tank_details("ABRAMS")["GIF"])
 
         embeds = [atk_tank, hp_tank]
         await ctx.send(
             embed=embeds[0],
-            view=CreatePaginator(self.bot, embeds, ctx.author.id, tank_data),
+            view=CreatePaginator(self.bot, embeds, ctx.author.id,),
         )
-
-    @slash_command()
-    async def tanks(self, ctx: CommandInteraction):
-        """
-        Parent Command
-        """
-        pass
-
-    @tanks.sub_command()
-    async def show(self, ctx: CommandInteraction):
-        """
-        Show your tanks
-        """
-        with open("assets/tanks.json") as f:
-            tank_data = json.load(f)
-
-        data = await self.bot.fetch(
-            "SELECT * FROM user_tanks WHERE user_id = $1", ctx.author.id
-        )
-        if len(data) < 1:
-            embed = Embed(
-                title="You dont have any tanks! Choose one now from `/start`",
-                color=Color.red(),
-            )
-            return await ctx.send(embed=embed)
-
-        embed = Embed(description="Your Tanks~\n\n", color=Color(0x2E3135))
-        if ctx.author.avatar:
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
-        else:
-            embed.set_author(name=ctx.author.name)
-        for n, tank in enumerate(data):
-            id, tank_type, hp, attack, defence = tank
-            tank_stats_range = tank_data[tank_type]["STATS"]
-            tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
-            embed.description += f"**{n+1}.** {tank_type} Tank | {tank_quality}%\n"
-        await ctx.send(embed=embed)
-
-    @tanks.sub_command()
-    async def info(self, ctx: CommandInteraction, serial: int):
-        """
-        Show a info about single tank
-        
-        Parameters
-        ----------
-        serial: Enter the serial of the tank based on /tank show
-        """
-        with open("assets/tanks.json") as f:
-            tank_data = json.load(f)
-
-        data = await self.bot.fetch(
-            "SELECT * FROM user_tanks WHERE user_id = $1",
-            ctx.author.id,
-        )
-        if len(data) < 1:
-            embed = Embed(
-                title="You dont have that tank! Use `/tank show` to view your tanks.",
-                color=Color.red(),
-            )
-            return await ctx.send(embed=embed)
-
-        for i, entry in enumerate(data):
-            if i + 1 == serial:
-                id, tank_type, hp, attack, defence = entry
-
-                embed = Embed(title=f"{tank_type} Tank", color=Color(0x2E3135))
-                if ctx.author.avatar:
-                    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
-                else:
-                    embed.set_author(name=ctx.author.name)
-
-                tank_stats_range = tank_data[tank_type]["STATS"]
-                tank_quality = self.bot.get_TQ(tank_stats_range, hp, attack, defence)
-
-                hp_max = tank_data[tank_type]["STATS"]["HP"]["max"]
-                atk_max = tank_data[tank_type]["STATS"]["ATTACK"]["max"]
-                def_max = tank_data[tank_type]["STATS"]["DEFENCE"]["max"]
-
-                embed.set_thumbnail(url=tank_data[tank_type]["GIF"])
-
-                embed.description = f"Stats - \n**HP:** {hp}  TQ: ({hp}/{hp_max})\n **Attack:** {attack}  TQ: ({attack}/{atk_max})**Defence:** {defence}  TQ: ({defence}/{def_max})\n\n **Total TQ:** {tank_quality:,.2f}%"
-                await ctx.send(embed=embed)
-
-    @tanks.sub_command()
-    async def market(self, ctx: CommandInteraction):
-        """
-        Open up Tank Market
-        """
-        with open("assets/tanks.json") as f:
-            tank_data = json.load(f)
-
-        embed = Embed(title=f"Tanks", color=Color.dark_green())
-        for tank_name in tank_data:
-            tank = tank_data[tank_name]
-            embed.add_field(
-                name="\u200b",
-                value=f"🔹**{tank_name} Tank** \n>>> Advantage: **`{tank['ADVANTAGE']}`** \n**Cost: `{tank['COST']}`**",
-                inline=False,
-            )
-
-        await ctx.response.send_message(embed=embed)
-
-    @tanks.sub_command()
-    async def buy(self, ctx: CommandInteraction, serial: str):
-        """
-        Buy a tank from market
-        """
-        with open("assets/tanks.json") as f:
-            tank_data = json.load(f)
-
-        serial = serial.upper()
-        tank_type = None
-        for tank in tank_data:
-            if tank == serial:
-                tank_type = tank
-
-        if tank_type is None:
-            embed = Embed(
-                title="Uh oh.. No tank of this serial exist.", color=Color.red()
-            )
-            return await ctx.send(embed=embed)
-
-        money = await self.bot.fetchval(
-            "SELECT money FROM users WHERE user_id = $1", ctx.author.id
-        )
-        if money is None:
-            embed = Embed(
-                title="Please choose a tank from `/start` and play a match to continue!",
-                color=Color.red(),
-            )
-            return await ctx.send(embed=embed)
-
-        cost = tank_data[tank_type]["COST"]
-        if money < cost:
-            embed = Embed(
-                title="You dont have enough money to buy this tank", color=Color.red()
-            )
-            return await ctx.send(embed=embed)
-
-        tank_stats_range = tank_data[tank_type]["STATS"]
-
-        tank_stats = self.bot.determine_stats(
-            tank_stats_range, tank_data[tank_type]["ADVANTAGE"]
-        )
-        hp = tank_stats[0]
-        attack = tank_stats[1]
-        defence = tank_stats[2]
-
-        hp_max = tank_stats_range["HP"]["max"]
-        atk_max = tank_stats_range["ATTACK"]["max"]
-        def_max = tank_stats_range["DEFENCE"]["max"]
-
-        await self.bot.execute(
-            "INSERT INTO user_tanks(user_id, tank_type, serial, hp, atk, def) VALUES($1, $2, $3, $4, $5, $6)",
-            ctx.author.id,
-            tank_type,
-            serial,
-            hp,
-            attack,
-            defence,
-        )
-        await self.bot.execute(
-            "UPDATE users SET money = money - $1 WHERE user_id = $2",
-            cost,
-            ctx.author.id,
-        )
-
-        tank_quality = self.bot.get_TQ(tank_stats_range, hp, defence, attack)
-        embed = Embed(
-            description=f"You've successfully bought **{tank_type}** Tank. \n\n**HP:** {hp}  TQ: ({hp}/{hp_max})\n**Attack:** {attack}  TQ: ({attack}/{atk_max})\n**Defence:** {defence}  TQ: ({defence}/{def_max})\n**Total TQ:** {tank_quality:,.2f}%",
-            color=Color(0x2E3135),
-        )
-        await ctx.send(embed=embed)
-        
-    @tanks.sub_command()
-    async def remove(self, ctx: CommandInteraction, serial: int):
-        """
-        Remove a tank from your inventory
-        
-        Parameters
-        ----------
-        serial: Enter the serial of the tank based on /tank show
-        """
-        serial = serial.upper()
-        data = await self.bot.fetch(
-            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
-            ctx.author.id,
-            serial,
-        )
-        
-        embed = Embed(
-                title="You dont own a tank of that serial", color=Color.red()
-            )
-        for i, tank in enumerate(data):
-            if i + 1 == serial:
-                id, tank_type, hp, attack, defence = tank
-                await self.bot.execute(
-                    "DELETE FROM user_tanks WHERE user_id = $1, tank_type = $2, hp = $3, atk = $4 AND def = $5",
-                    ctx.author.id, tank_type, hp, attack, defence
-                )
-                embed.title = "Tank have been removed succesfully!"
-                embed.color = Color.green()
-
-        await ctx.send(embed=embed)
-
-    @tanks.sub_command()
-    async def set(self, ctx: CommandInteraction, serial: int):
-        """
-        Set a tank for your battle
-        
-        Parameters
-        ----------
-        serial: Enter the serial of the tank based on /tank show
-        """
-        serial = serial.upper()
-        data = await self.bot.fetch(
-            "SELECT * FROM user_tanks WHERE user_id = $1 AND tank_type = $2",
-            ctx.author.id,
-            serial,
-        )
-        
-        embed = Embed(
-                title="You dont own a tank of that serial", color=Color.red()
-            )
-        for i, tank in enumerate(data):
-            if i + 1 == serial:
-                id, tank_type, hp, attack, defence = tank
-                j = json.dumps([tank_type, hp, attack, defence])
-                await self.bot.execute(
-                    "UPDATE users SET battle_tank = $1 WHERE user_id = $2",
-                    j, ctx.author.id
-                )
-                embed.title = "Tank is ready for battle!"
-                embed.color = Color.green()
-
-        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Starter(bot))
