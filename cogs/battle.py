@@ -1,22 +1,32 @@
+<<<<<<< HEAD
 import numpy as np
 import random
 import json
+=======
+>>>>>>> 83137e598b265a20031c5bf3ed6728daee70378c
 from io import BytesIO
-from random import uniform, choice
+from random import choice, randint, uniform
 
-# from matplotlib import pyplot as plt
-
-from disnake import *
-from disnake.ext.commands import *
+import numpy as np
+from disnake import (
+    ButtonStyle,
+    CommandInteraction,
+    File,
+    Member,
+    MessageInteraction,
+    ModalInteraction,
+    TextInputStyle,
+    ui,
+)
+from disnake.ext.commands import Cog, slash_command
 from PIL import Image, ImageDraw
-
 
 G = 9.8
 
 ONGOING_BATTLES = {}
 GROUND_LEVEL = 825
 
-# TODO: Confirm challenge by opponent, give out coins in the end, edit get_tanks to fetch the default tank
+# TODO: give out coins in the end
 
 
 def compute_distance(power, angle, msg_id):
@@ -35,12 +45,12 @@ def compute_distance(power, angle, msg_id):
 def prepare_attack_image(cords, tank_size, distance, battle_dict):
     explosion_lst = ["explosion.png", "explosion2.png", "explosion3.png"]
 
-    nozzle = Image.open("assets/nozzle.png")
+    nozzle = Image.open("assets/Attacks/nozzle.png")
     nozzle = nozzle.resize((120, 120))
     if cords[0] <= 800:
         nozzle = nozzle.transpose(Image.FLIP_LEFT_RIGHT)
 
-    explosion = Image.open(f"assets/{random.choice(explosion_lst)}")
+    explosion = Image.open(f"assets/Attacks/{choice(explosion_lst)}")
     explosion = explosion.resize((150, 150))
 
     if cords[0] <= 800:
@@ -62,9 +72,13 @@ def prepare_attack_image(cords, tank_size, distance, battle_dict):
     p2_max_hp = battle_dict["p2_tank"]["max_hp"]
     p2_hp = battle_dict["p2_tank"]["hp"]
 
-    tank_left = give_tank_image(f"assets/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp)
-    tank_right = give_tank_image(f"assets/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp)
-    background = Image.open("assets/bg.png")
+    tank_left = give_tank_image(
+        f"assets/Tanks/{battle_dict['p1_tank']['tank']}.png", p1_max_hp, p1_hp
+    )
+    tank_right = give_tank_image(
+        f"assets/Tanks/{battle_dict['p2_tank']['tank']}.png", p2_max_hp, p2_hp
+    )
+    background = Image.open("assets/Backgrounds/bg.png")
 
     tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
 
@@ -120,12 +134,22 @@ def give_tank_image(path, total_health, current_health=None):
     draw.ellipse((x_cord, y_cord, x_cord + height, y_cord + height), fill=bg_color)
     # make the bar circle at the end
     draw.ellipse(
-        (x_cord + total_possible_width, y_cord, x_cord + total_possible_width + height, y_cord + height),
+        (
+            x_cord + total_possible_width,
+            y_cord,
+            x_cord + total_possible_width + height,
+            y_cord + height,
+        ),
         fill=bg_color,
     )
     # fill the middle portion
     draw.rectangle(
-        (x_cord + (height / 2), y_cord, x_cord + total_possible_width + (height / 2), y_cord + height),
+        (
+            x_cord + (height / 2),
+            y_cord,
+            x_cord + total_possible_width + (height / 2),
+            y_cord + height,
+        ),
         fill=bg_color,
     )
 
@@ -168,23 +192,25 @@ def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict
     hit = confirm_hit(attacker_coords, defender_coords, distance, battle_dict)
 
     if hit:
-        remarks = [f"Brutal! **{author.name}** dealt damage!", "That's a hit!", "No mercy!", "Keep it up soldier!", ]
+        remarks = [
+            f"Brutal! **{author.name}** dealt damage!",
+            "That's a hit!",
+            "No mercy!",
+            "Keep it up soldier!",
+        ]
         return choice(remarks)
-    
+
     if attacker_coords[0] <= 800:
-        distance += attacker_coords[0] 
-        distance += battle_dict['tank_size'][0]
+        distance += attacker_coords[0]
+        distance += battle_dict["tank_size"][0]
         attacker_coords = (2200 + attacker_coords[0], attacker_coords[1])
     else:
         distance += 3000 - attacker_coords[0]
-        distance = distance - battle_dict['tank_size'][0]
-    
-    
-    if attacker_coords[0] in [x for x in range(
-        distance, distance+201
-    )]:
+        distance = distance - battle_dict["tank_size"][0]
+
+    if attacker_coords[0] in [x for x in range(distance, distance + 201)]:
         remarks = [
-            'Close call!',
+            "Close call!",
             "Almost there! keep adjusting",
             "That's right! You can do it",
         ]
@@ -195,20 +221,24 @@ def give_remarks(author, attacker_coords, defender_coords, distance, battle_dict
             "Adjustment is the key to success. Keep adjusting the power and angle until you find the perfect one!",
             "Don't let your opponent figure out the adjustments before you!",
             "Every tank has it's own special stat, some might be good in attack while others in defence or HP. ",
-            "**Did You know?** \nEvery tank's name makes sense if you search it up."
+            "**Did You know?** \nEvery tank's name makes sense if you search it up.",
         ]
         return choice(remarks)
 
 
 async def get_tanks(bot, p1, p2):
-    # TODO Later change to fetch the default tank
-    data_p1 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p1.id}")
-    tank_p1 = data_p1[0]
-    if len(data_p1) > 1:
-        battle_tank = await bot.fetchval(
-            "SELECT battle_tank FROM users WHERE user_id = ?",
-            p1.id
+
+    serial_p1 = await bot.fetchval(
+        f"SELECT battle_tank FROM users WHERE user_id = {p1.id}"
+    )
+
+    if serial_p1:
+        tank_p1 = await bot.fetchrow(
+            f"SELECT * FROM user_tanks WHERE user_id = $1 and serial = $2",
+            p1.id,
+            serial_p1,
         )
+<<<<<<< HEAD
         t_type, hp, atck, defe = json.loads(battle_tank)
         for d in data_p1:
             if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
@@ -224,15 +254,34 @@ async def get_tanks(bot, p1, p2):
         for d in data_p2:
             if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
                 tank_p2 = d
+=======
+
+    else:
+        tank_p1 = None
+
+    serial_p2 = await bot.fetchval(
+        f"SELECT battle_tank FROM users WHERE user_id = {p2.id}"
+    )
+
+    if serial_p2:
+        tank_p2 = await bot.fetchrow(
+            f"SELECT * FROM user_tanks WHERE user_id = $1 and serial = $2",
+            p2.id,
+            serial_p2,
+        )
+
+    else:
+        tank_p2 = None
+>>>>>>> 83137e598b265a20031c5bf3ed6728daee70378c
 
     return (tank_p1, tank_p2)
 
 
 def consume_hp(self, battle_dict, player):
-    if player == 'p1':
-        enemy = 'p2'
+    if player == "p1":
+        enemy = "p2"
     else:
-        enemy = 'p1'
+        enemy = "p1"
 
     hp = battle_dict[f"{enemy}_tank"]["hp"]
     defence = battle_dict[f"{enemy}_tank"]["def"]
@@ -240,9 +289,8 @@ def consume_hp(self, battle_dict, player):
 
     battle_dict[f"{enemy}_tank"]["hp"] = hp - (player_atk - defence)
 
-    if battle_dict[f'{enemy}_tank']['hp'] <= 0:
+    if battle_dict[f"{enemy}_tank"]["hp"] <= 0:
         self.game_over = True
-
 
 
 def confirm_hit(attacker_coords, defender_coords, distance, battle_dict):
@@ -257,7 +305,7 @@ def confirm_hit(attacker_coords, defender_coords, distance, battle_dict):
         )
     ]:
         return True
-        
+
 
 class PowerModal(ui.Modal):
     def __init__(self) -> None:
@@ -318,16 +366,22 @@ class PowerModal(ui.Modal):
                 attacker_coords = p1_cords
                 defender_coords = p2_cords
 
-                if confirm_hit(attacker_coords, defender_coords, distance, battle_dict,):
-                    consume_hp(self, battle_dict, 'p1')
+                if confirm_hit(
+                    attacker_coords, defender_coords, distance, battle_dict,
+                ):
+                    consume_hp(self, battle_dict, "p1")
 
             else:
                 attacker_coords = p2_cords
                 defender_coords = p1_cords
 
-                if confirm_hit((3000 - attacker_coords[0], attacker_coords[1]), (3000 - defender_coords[0], defender_coords[1]), distance, battle_dict, ):
-                    consume_hp(self, battle_dict, 'p2')
-
+                if confirm_hit(
+                    (3000 - attacker_coords[0], attacker_coords[1]),
+                    (3000 - defender_coords[0], defender_coords[1]),
+                    distance,
+                    battle_dict,
+                ):
+                    consume_hp(self, battle_dict, "p2")
 
             tank_size = battle_dict["tank_size"]
 
@@ -342,15 +396,20 @@ class PowerModal(ui.Modal):
             await inter.send("You have successfully attacked!", ephemeral=True)
 
             await inter.message.edit(
-                content=give_remarks(inter.author, attacker_coords, defender_coords, distance, battle_dict),
+                content=give_remarks(
+                    inter.author,
+                    attacker_coords,
+                    defender_coords,
+                    distance,
+                    battle_dict,
+                ),
                 file=File(filename="bg.png", fp=background_bytes),
                 attachments=[],
             )
 
             if self.game_over:
                 await inter.message.edit(
-                    f"{inter.author.mention} has won the game!",
-                    view=None
+                    f"{inter.author.mention} has won the game!", view=None
                 )
 
 
@@ -363,24 +422,31 @@ class ButtonView(ui.View):
     async def atk_button(self, btn, inter: MessageInteraction):
         await inter.response.send_modal(PowerModal())
 
+
 class ConfirmationButtons(ui.View):
     def __init__(self, authorid):
         super().__init__(timeout=120.0)
         self.value = None
         self.authorid = authorid
+
     @ui.button(emoji="✖️", style=ButtonStyle.red)
     async def first_button(self, button, inter):
         if inter.author.id != self.authorid:
-            return await inter.send("You cannot interact with these buttons.", ephemeral=True)
+            return await inter.send(
+                "You cannot interact with these buttons.", ephemeral=True
+            )
         self.value = False
         for button in self.children:
             button.disabled = True
         await inter.response.edit_message(view=self)
         self.stop()
+
     @ui.button(emoji="✔️", style=ButtonStyle.green)
     async def second_button(self, button, inter):
         if inter.author.id != self.authorid:
-            return await inter.send("You cannot interact with these buttons.", ephemeral=True)
+            return await inter.send(
+                "You cannot interact with these buttons.", ephemeral=True
+            )
         self.value = True
         for button in self.children:
             button.disabled = True
@@ -411,7 +477,6 @@ class Battle(Cog):
                 "You cannot have a battle with a bot or with yourself!"
             )
 
-
         # made a function to give tank images
         p1_tank, p2_tank = await get_tanks(self.bot, ctx.author, opponent)
         if not p1_tank:
@@ -424,26 +489,31 @@ class Battle(Cog):
             )
 
         view = ConfirmationButtons(opponent.id)
-        msg = await ctx.send(f"{opponent.mention} You've been invited to a battle by {ctx.author.mention}!", view=view)
+        msg = await ctx.send(
+            f"{opponent.mention} You've been invited to a battle by {ctx.author.mention}!",
+            view=view,
+        )
         await view.wait()
         if view.value is None:
             await ctx.edit_original_message(content="Timed Out.")
             return
         elif not view.value:
-            await ctx.edit_original_message(content=f"{opponent.mention} rejected the battle invitation.")
-            return 
+            await ctx.edit_original_message(
+                content=f"{opponent.mention} rejected the battle invitation."
+            )
+            return
 
         # Opening and preparing all the assets
-        background = Image.open("assets/bg.png")
+        background = Image.open("assets/Backgrounds/bg.png")
 
-        tank_left = give_tank_image(f"assets/{p1_tank[1]}.png", 100)
-        tank_right = give_tank_image(f"assets/{p2_tank[1]}.png", 100)
+        tank_left = give_tank_image(f"assets/Tanks/{p1_tank[1]}.png", 100)
+        tank_right = give_tank_image(f"assets/Tanks/{p2_tank[1]}.png", 100)
 
         # flipping the right tank
         tank_right = tank_right.transpose(Image.FLIP_LEFT_RIGHT)
 
-        random_right_x = random.randint(1, 800)
-        random_left_x = random.randint(1, 800)
+        random_right_x = randint(1, 800)
+        random_left_x = randint(1, 800)
 
         p1_cords = (random_left_x, (GROUND_LEVEL - tank_left.height))
         p2_cords = (
@@ -471,19 +541,19 @@ class Battle(Cog):
             "p1_tank": {
                 "tank": p1_tank[1],
                 "coords": p1_cords,
-                "max_hp": p1_tank[3],
-                "hp": p1_tank[3],
-                "atk": p1_tank[4],
-                "def": p1_tank[5],
+                "max_hp": p1_tank[2],
+                "hp": p1_tank[2],
+                "atk": p1_tank[3],
+                "def": p1_tank[4],
                 "author": ctx.author,
             },
             "p2_tank": {
                 "tank": p2_tank[1],
                 "coords": p2_cords,
-                "max_hp": p2_tank[3],
-                "hp": p2_tank[3],
-                "atk": p2_tank[4],
-                "def": p2_tank[5],
+                "max_hp": p2_tank[2],
+                "hp": p2_tank[2],
+                "atk": p2_tank[3],
+                "def": p2_tank[4],
                 "author": opponent,
             },
             "tank_size": tank_right.size,

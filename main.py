@@ -1,5 +1,5 @@
-from asyncio import tasks
-from disnake import *
+import json
+from disnake import Intents
 from disnake.ext import commands
 import os, traceback
 import aiosqlite
@@ -106,7 +106,13 @@ class MyBot(commands.InteractionBot):
                 + tank_stats_range["DEFENCE"]["max"]
             )
         ) * 100
-        return tank_quality
+        return f"{tank_quality:,.2f}"
+
+    def get_tank_details(self, name: str):
+        with open("assets/Tanks/tanks.json", "r") as f:
+            tanks_details = json.load(f)
+
+        return tanks_details[name.upper()]
 
 
 bot = MyBot(intents=Intents.default())
@@ -127,11 +133,11 @@ async def setuptable(bot):
         """
         CREATE TABLE IF NOT EXISTS user_tanks(
             user_id INTEGER, 
-            tank_type TEXT,
-            serial INTEGER,  
+            tank_type TEXT, 
             hp INTEGER, 
             atk INTEGER, 
-            def INTEGER
+            def INTEGER,
+            serial INTEGER
         )
         """
     )
