@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import numpy as np
-import random
-import json
-=======
->>>>>>> 83137e598b265a20031c5bf3ed6728daee70378c
 from io import BytesIO
 from random import choice, randint, uniform
 
@@ -238,23 +232,6 @@ async def get_tanks(bot, p1, p2):
             p1.id,
             serial_p1,
         )
-<<<<<<< HEAD
-        t_type, hp, atck, defe = json.loads(battle_tank)
-        for d in data_p1:
-            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
-                tank_p1 = d
-    data_p2 = await bot.fetch(f"SELECT * FROM user_tanks WHERE user_id = {p2.id}")
-    tank_p2 = data_p2[0]
-    if len(data_p2) > 1:
-        battle_tank = await bot.fetchval(
-            "SELECT battle_tank FROM users WHERE user_id = ?",
-            p2.id
-        )
-        t_type, hp, atck, defe = json.loads(battle_tank)
-        for d in data_p2:
-            if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
-                tank_p2 = d
-=======
 
     else:
         tank_p1 = None
@@ -272,7 +249,6 @@ async def get_tanks(bot, p1, p2):
 
     else:
         tank_p2 = None
->>>>>>> 83137e598b265a20031c5bf3ed6728daee70378c
 
     return (tank_p1, tank_p2)
 
