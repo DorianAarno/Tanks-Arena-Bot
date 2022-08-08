@@ -1,13 +1,15 @@
 from disnake import *
 from disnake.ext.commands import *
 
+
 class Market(Cog):
     """
         🛒 MarketPlace (Coming Soon)
     """
+
     def __init__(self, bot):
         self.bot = bot
-    
+
     @slash_command(description="Buy new tanks from the marketplace!")
     async def market(self, ctx: CommandInteraction):
         await ctx.send("Coming Soon!")
@@ -102,6 +104,7 @@ class Market(Cog):
     #         color=Color(0x2E3135),
     #     )
     #     await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Market(bot))

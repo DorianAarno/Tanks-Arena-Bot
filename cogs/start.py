@@ -1,10 +1,11 @@
-
-from disnake import *
-from disnake.ext.commands import *
+from disnake import ButtonStyle, Color, CommandInteraction, Embed, ui
+from disnake.ext.commands import Cog, slash_command
 
 
 class CreatePaginator(ui.View):
-    def __init__(self, bot, embeds: list, author: int,):
+    def __init__(
+        self, bot, embeds: list, author: int,
+    ):
         super().__init__(timeout=None)
         self.bot = bot
         self.embeds = embeds
@@ -41,7 +42,7 @@ class CreatePaginator(ui.View):
         tank_stats_range = self.bot.get_tank_details(name)["STATS"]
 
         tank_stats = self.bot.determine_stats(
-            tank_stats_range,  self.bot.get_tank_details(name)["ADVANTAGE"]
+            tank_stats_range, self.bot.get_tank_details(name)["ADVANTAGE"]
         )
         hp = tank_stats[0]
         attack = tank_stats[1]
@@ -64,7 +65,7 @@ class CreatePaginator(ui.View):
             "INSERT OR IGNORE INTO users(user_id, money, battle_tank) VALUES($1, $2, $3)",
             inter.author.id,
             0,
-            1
+            1,
         )
 
         tank_quality = self.bot.get_TQ(tank_stats_range, hp, defence, attack)
@@ -132,9 +133,9 @@ class Starter(Cog):
 
         embeds = [atk_tank, hp_tank]
         await ctx.send(
-            embed=embeds[0],
-            view=CreatePaginator(self.bot, embeds, ctx.author.id,),
+            embed=embeds[0], view=CreatePaginator(self.bot, embeds, ctx.author.id,),
         )
+
 
 def setup(bot):
     bot.add_cog(Starter(bot))

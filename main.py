@@ -1,6 +1,5 @@
-from asyncio import tasks
 import json
-from disnake import *
+from disnake import Intents
 from disnake.ext import commands
 import os, traceback
 import aiosqlite
@@ -110,9 +109,9 @@ class MyBot(commands.InteractionBot):
         return f"{tank_quality:,.2f}"
 
     def get_tank_details(self, name: str):
-        with open('assets/Tanks/tanks.json', 'r') as f:
+        with open("assets/Tanks/tanks.json", "r") as f:
             tanks_details = json.load(f)
-            
+
         return tanks_details[name.upper()]
 
 

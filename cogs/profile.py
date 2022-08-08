@@ -1,11 +1,12 @@
+from disnake import Color, CommandInteraction, Embed
+from disnake.ext.commands import Cog, slash_command
 
-from disnake import *
-from disnake.ext.commands import *
 
 class Profile(Cog):
     """
         👤 Profile
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -48,7 +49,7 @@ class Profile(Cog):
 
         tank_data = self.bot.get_tank_details(name)
 
-        tank_quality = self.bot.get_TQ(tank_data['STATS'], hp, attack, defence)
+        tank_quality = self.bot.get_TQ(tank_data["STATS"], hp, attack, defence)
 
         hp_max = tank_data["STATS"]["HP"]["max"]
         atk_max = tank_data["STATS"]["ATTACK"]["max"]
@@ -58,7 +59,7 @@ class Profile(Cog):
 
         embed.description = f"**HP:** {hp}  TQ: ({hp}/{hp_max}) \n**Attack:** {attack}  TQ: ({attack}/{atk_max}) \n**Defence:** {defence}  TQ: ({defence}/{def_max})\n\n **Total TQ:** {tank_quality}%"
         await ctx.send(embed=embed)
-    
+
     @tanks.sub_command()
     async def dispose(self, ctx: CommandInteraction, serial: int):
         """
@@ -70,9 +71,8 @@ class Profile(Cog):
         """
         # Making sure it's not user's last tank
         data = await self.bot.fetch(
-            "SELECT * FROM user_tanks WHERE user_id = $1",
-            ctx.author.id,
-        ) 
+            "SELECT * FROM user_tanks WHERE user_id = $1", ctx.author.id,
+        )
         if len(data) == 1:
             return await ctx.send("You cannot dispose your last tank.")
 
@@ -83,9 +83,7 @@ class Profile(Cog):
             serial,
         )
 
-        embed = Embed(
-            title="You do not own a tank of that serial.", color=Color.red()
-        )
+        embed = Embed(title="You do not own a tank of that serial.", color=Color.red())
 
         if not data:
             return await ctx.send(embed=embed)
@@ -93,11 +91,12 @@ class Profile(Cog):
         id, name, hp, attack, defence, serial = data
         await self.bot.execute(
             "DELETE FROM user_tanks WHERE user_id = $1 and serial = $2",
-            ctx.author.id, serial,
+            ctx.author.id,
+            serial,
         )
         embed.title = f"{name} Tank has been removed succesfully!"
         embed.color = Color.green()
-        embed.set_thumbnail(url=self.bot.get_tank_details(name)['GIF'])
+        embed.set_thumbnail(url=self.bot.get_tank_details(name)["GIF"])
 
         await ctx.send(embed=embed)
 
@@ -116,25 +115,25 @@ class Profile(Cog):
             ctx.author.id,
             serial,
         )
-        
-        embed = Embed(
-            title="You do not own a tank of that serial", color=Color.red()
-        )
+
+        embed = Embed(title="You do not own a tank of that serial", color=Color.red())
 
         if not data:
             return await ctx.send(embed=embed)
 
         serial = data[5]
-    
+
         await self.bot.execute(
             "UPDATE users SET battle_tank = $1 WHERE user_id = $2",
-            serial, ctx.author.id
+            serial,
+            ctx.author.id,
         )
         embed.title = f"{data[1]} Tank is ready for battle!"
         embed.color = Color.green()
-        embed.set_thumbnail(url=self.bot.get_tank_details(data[1])['GIF'])
+        embed.set_thumbnail(url=self.bot.get_tank_details(data[1])["GIF"])
 
         await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Profile(bot))

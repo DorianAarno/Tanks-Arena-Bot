@@ -1,5 +1,5 @@
-from disnake import *
-from disnake.ext.commands import *
+from disnake import ButtonStyle, Color, Embed, MessageInteraction, ui
+from disnake.ext.commands import Cog, slash_command
 
 
 class HelpButton(ui.Button):

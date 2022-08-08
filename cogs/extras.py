@@ -1,5 +1,4 @@
-from disnake import *
-from disnake.ext.commands import *
+from disnake.ext.commands import Cog, slash_command
 
 
 class Extras(Cog):
@@ -11,8 +10,8 @@ class Extras(Cog):
         self.bot = bot
 
     @slash_command(name="ping", description="Check the latency of the bot.")
-    async def ping(ctx):
-        await ctx.send(f"📶 {round(bot.latency * 1000)}ms")
+    async def ping(self, ctx):
+        await ctx.send(f"📶 {round(self.bot.latency * 1000)}ms")
 
 
 def setup(bot):
