@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import json
 from io import BytesIO
 from random import uniform, choice
 
@@ -208,7 +209,7 @@ async def get_tanks(bot, p1, p2):
             "SELECT battle_tank FROM users WHERE user_id = ?",
             p1.id
         )
-        t_type, hp, atck, defe = battle_tank
+        t_type, hp, atck, defe = json.loads(battle_tank)
         for d in data_p1:
             if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
                 tank_p1 = d
@@ -219,7 +220,7 @@ async def get_tanks(bot, p1, p2):
             "SELECT battle_tank FROM users WHERE user_id = ?",
             p2.id
         )
-        t_type, hp, atck, defe = battle_tank
+        t_type, hp, atck, defe = json.loads(battle_tank)
         for d in data_p2:
             if d[1] == t_type and d[3] == hp and d[4] == atck and d[5] == defe:
                 tank_p2 = d
