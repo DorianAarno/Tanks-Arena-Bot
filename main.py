@@ -161,7 +161,7 @@ async def setuptable(bot):
         """
         CREATE TABLE IF NOT EXISTS user_tanks(
             user_id INTEGER, 
-            tank_type TEXT, 
+            name TEXT, 
             hp INTEGER, 
             atk INTEGER, 
             def INTEGER,
