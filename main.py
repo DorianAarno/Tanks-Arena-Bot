@@ -4,6 +4,11 @@ from disnake.ext import commands
 import os, traceback
 import aiosqlite
 from random import randint
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.getenv("BOT_TOKEN")
 
 
 class MyBot(commands.InteractionBot):
@@ -62,7 +67,28 @@ class MyBot(commands.InteractionBot):
                 exe = await cur.execute(query, tuple(values))
                 all = await exe.fetchall()
             return all
-
+        
+    async def give_money(self, amount, user_id):
+        self.execute(
+            "UPDATE users SET money = money + $1 WHERE user_id = $2",
+            amount, user_id
+        ) 
+    
+    async def remove_money(self, amount, user_id):
+        user_money = self.fetchval(
+            "SELECT money FROM users WHERE user_id = $1",
+            user_id
+        )
+        if amount > user_money:
+            return False
+        else:
+            self.execute(
+                "UPDATE users SET money = money - $1 WHERE user_id = $2",
+                amount, user_id
+            )
+            return True 
+                
+        
     def determine_stats(self, tank_stats_range: dict, advantage: str):
         def decrease_highTQ_chances(ignore_stat: str):
             hp_max = tank_stats_range["HP"]["max"]
@@ -113,6 +139,8 @@ class MyBot(commands.InteractionBot):
             tanks_details = json.load(f)
 
         return tanks_details[name.upper()]
+    
+    
 
 
 bot = MyBot(intents=Intents.default())
@@ -166,4 +194,4 @@ for file in os.listdir("./cogs"):
             print(traceback.format_exc())
 
 
-bot.run("MTAwMzk1NDc3OTM0NjcxODcyMA.GvdCkj.bfHjQKiRlkzRTm1KdRSXUV0-Sug4P58aaC_UFM")
+bot.run(TOKEN)
