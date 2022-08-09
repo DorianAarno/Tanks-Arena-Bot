@@ -21,9 +21,9 @@
 ## ❓ Knowledgebase
 * You may run `/start` to pick your starter tank
 * For list of commands run `/help` 
-* You may contact us through email in case you have any enquiries. 
-devnirwal11@gmail.com - Classified
-aarnodorian56@gmail.com - Aarno
+* You may contact us through email in case you have any enquiries.  
+devnirwal11@gmail.com - Classified  
+aarnodorian56@gmail.com - Aarno 
 
 ## ⚠️ Self Hosting
 We request you to not run a self hosted version of this bot. Code here is for educational purposes only. Instead consider [inviting the bot](https://discord.com/api/oauth2/authorize?client_id=1003954779346718720&permissions=2147863616&scope=bot%20applications.commands)
