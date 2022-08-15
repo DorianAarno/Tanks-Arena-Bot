@@ -1,5 +1,5 @@
 from io import BytesIO
-from random import choice, randint, uniform
+from random import choice, randint, random, uniform
 
 import numpy as np
 from disnake import (
