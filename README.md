@@ -30,3 +30,7 @@ We request you to not run a self hosted version of this bot. Code here is for ed
 
 ## 🧑🏻‍💻 Conclusion
 We aim to create game-like experience possible with discord bots. We made Tank Arena to introduce a new battle mechanism which has not been done in discord bot development before. We have used image manipulation tools and several assets to bring forward an entertainment bot which revolves around the theme of tanks. We hope you will enjoy it.  
+
+## 🏆 Achievements
+We ranked 2nd among 18 teams in [discord bot jam](https://discord.gg/spookcord-hackathon-coding-code-events-hack-766008315367915600) hosted in August 2022 
+<img width="578" alt="image" src="https://user-images.githubusercontent.com/88921711/195432878-206e08e6-fd5e-4335-afc3-5bc5e0648ef5.png">
